@@ -1,0 +1,2802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>포스트잇 체크리스트 노트</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, textarea { user-select: text; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100dvh;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #f5f6f8;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 속지 패턴 (32px 한 칸 기준) */
+    .paper-plain { background-image: none; }
+    .paper-lined {
+      background-image: linear-gradient(to bottom, var(--line-color, rgba(0, 0, 0, 0.09)) 1px, transparent 1px);
+      background-size: 100% 32px;
+      background-position: 0 0;
+    }
+    .paper-grid {
+      background-image:
+        linear-gradient(to right, var(--line-color, rgba(0, 0, 0, 0.06)) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--line-color, rgba(0, 0, 0, 0.08)) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-position: 16px 0;
+    }
+    .paper-dot {
+      background-image: radial-gradient(var(--dot-color, rgba(0, 0, 0, 0.2)) 1.3px, transparent 1.3px);
+      background-size: 32px 32px;
+      background-position: 16px 16px;
+    }
+
+    /* 사각형 묶음 카드 & 클릭 시 옆으로 펼쳐지는 애니메이션 */
+    .stacked-note-wrap {
+      position: relative;
+      padding-top: 8px;
+      padding-right: 10px;
+      cursor: pointer;
+    }
+    .stacked-back-sheet {
+      position: absolute;
+      inset: 8px 10px 0 0;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: bottom left;
+      pointer-events: none;
+    }
+    .stacked-front-sheet {
+      position: relative;
+      z-index: 10;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: bottom left;
+    }
+    .stacked-note-wrap.is-spreading .stacked-front-sheet {
+      transform: translate(-5px, 2px) rotate(-3.5deg);
+    }
+    .stacked-note-wrap.is-spreading .stacked-back-1 {
+      transform: translate(14px, -6px) rotate(6deg) !important;
+    }
+    .stacked-note-wrap.is-spreading .stacked-back-2 {
+      transform: translate(24px, -11px) rotate(11deg) !important;
+    }
+    .stacked-note-wrap.is-spreading .stacked-back-3 {
+      transform: translate(32px, -15px) rotate(15deg) !important;
+    }
+
+    /* 미니 드롭다운 메뉴 (항상 버튼 아래쪽으로 열림) */
+    .mini-popover {
+      position: fixed;
+      width: 120px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.14);
+      padding: 4px;
+      z-index: 50;
+      transform-origin: top right;
+      animation: dropDownIn 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes dropDownIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* 포스트잇 모양 새 노트 버튼 (연보라색) */
+    .postit-btn {
+      background-color: #EDE9FE;
+      border: 1px solid #DDD6FE;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: -3px 6px 14px rgba(109, 40, 217, 0.14);
+    }
+    .postit-btn:active {
+      transform: rotate(-6deg) scale(0.93) translateY(-4px);
+    }
+    .postit-peel {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, rgba(109, 40, 217, 0.12) 50%, #f5f6f8 50%);
+      border-top-left-radius: 6px;
+    }
+
+    /* 손가락 가로 스와이프 전용 페이지 트랙 (1페이지 = 3개 아이템) */
+    .paged-carousel-track {
+      display: flex;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+    }
+    .paged-carousel-page {
+      flex: 0 0 100%;
+      width: 100%;
+      min-width: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 2px;
+    }
+
+    /* 7번: 테두리 박스 없이 속지 칸(32px) 정중앙에 딱 맞춰지는 순수 텍스트 라인 */
+    .direct-sheet-line {
+      font-size: 15px;
+      line-height: 32px;
+      min-height: 32px;
+      padding: 0 4px;
+      margin: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      width: 100%;
+      display: block;
+    }
+
+    /* 드래그 손잡이 */
+    .drag-handle {
+      touch-action: none;
+      cursor: grab;
+      padding: 4px 2px;
+      opacity: 0.45;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+      opacity: 1;
+    }
+
+    .block-dragging, .folder-card-dragging {
+      transform: scale(1.04) !important;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24) !important;
+      border: 2px solid #8B5CF6 !important;
+      z-index: 40 !important;
+      opacity: 0.96 !important;
+      touch-action: none !important;
+    }
+
+    /* 우측 슬라이드 드로어 */
+    .side-drawer-panel {
+      transform: translateX(100%);
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .side-drawer-panel.open {
+      transform: translateX(0);
+    }
+
+    /* 커스텀 컬러 피커 */
+    .sv-panel {
+      position: relative;
+      width: 100%;
+      height: 190px;
+      border-radius: 16px;
+      overflow: hidden;
+      touch-action: none;
+      cursor: crosshair;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .sv-white {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, #ffffff, rgba(255,255,255,0));
+    }
+    .sv-black {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #000000, rgba(0,0,0,0));
+    }
+    .sv-thumb {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 1.5px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.3);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .hue-bar {
+      position: relative;
+      width: 100%;
+      height: 22px;
+      border-radius: 999px;
+      background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+      touch-action: none;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    }
+    .hue-thumb {
+      position: absolute;
+      top: 50%;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.35);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: fixed; left: 0; top: 0; width: 100%; background: white; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ================= 1. 홈 화면 ================= -->
+  <div id="home-view" class="flex-1 flex flex-col overflow-hidden">
+    <header class="px-5 pt-4 pb-3 flex justify-between items-center shrink-0 bg-[#f5f6f8] gap-2">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <button id="home-back-btn" onclick="exitFolder()" class="hidden w-9 h-9 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-base font-bold text-gray-800 active:scale-95 shrink-0">
+          ←
+        </button>
+        <div id="home-title-area" class="flex items-center gap-2 min-w-0">
+          <h1 id="home-header-title" class="text-xl font-bold text-gray-900 tracking-tight truncate">내 포스트잇</h1>
+          <!-- 5번: 개인별 독립 공간 전환 버튼 -->
+          <button onclick="openProfileModal()" id="current-profile-badge"
+            class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95">
+            내 공간 ▾
+          </button>
+        </div>
+        <input id="folder-title-input" type="text" placeholder="묶음 제목 입력..."
+          oninput="updateFolderTitle(this.value)"
+          class="hidden flex-1 min-w-0 text-xl font-bold text-gray-900 bg-white/80 px-2.5 py-1 rounded-xl border border-black/15 outline-none focus:border-purple-400" />
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="folder-link-header-btn" onclick="openLinkModalForFolder()" class="hidden px-2.5 py-1.5 bg-white text-black border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
+          + 노트 추가
+        </button>
+        <button onclick="openTrashView()" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-sm active:scale-95">
+          휴지통 <span id="trash-count-badge" class="text-gray-400 font-normal">0</span>
+        </button>
+        <button onclick="cycleGridCols()" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-sm active:scale-95">
+          <span id="grid-label">2열</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="home-grid" class="flex-1 overflow-y-auto px-4 pb-28 grid grid-cols-2 gap-3.5 content-start no-scrollbar"></main>
+
+    <!-- 1번 & 2번: 연보라색 포스트잇 모양 새 노트 추가 버튼 -->
+    <button onclick="openCreateSheet()" class="postit-btn fixed bottom-6 right-6 w-16 h-16 rounded-tl-2xl rounded-tr-md rounded-bl-md flex flex-col items-center justify-center z-20">
+      <span class="text-2xl leading-none text-purple-950 font-light">+</span>
+      <span class="text-[11px] font-bold text-purple-950 mt-0.5">새 노트</span>
+      <div class="postit-peel"></div>
+    </button>
+  </div>
+
+  <!-- ================= 1-2. 휴지통 화면 ================= -->
+  <div id="trash-view" class="hidden flex-1 flex flex-col overflow-hidden bg-[#f5f6f8]">
+    <header class="px-5 pt-4 pb-3 flex justify-between items-center shrink-0 border-b border-gray-200 bg-white">
+      <div class="flex items-center gap-2.5">
+        <button onclick="closeTrashView()" class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-base font-bold text-gray-800 active:scale-95">
+          ←
+        </button>
+        <h1 class="text-lg font-bold text-gray-900">휴지통</h1>
+      </div>
+      <button onclick="emptyAllTrash()" class="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 text-xs font-bold active:scale-95">
+        비우기
+      </button>
+    </header>
+    <main id="trash-list" class="flex-1 overflow-y-auto p-4 space-y-2.5 no-scrollbar"></main>
+  </div>
+
+  <!-- ================= 2. 에디터 화면 ================= -->
+  <div id="editor-view" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
+    <div class="bg-gray-100 pt-2 px-2 flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 shrink-0" id="recent-tabs-bar"></div>
+
+    <div class="px-4 py-2 flex justify-between items-center border-b border-black/5 shrink-0" id="editor-topbar">
+      <button onclick="goHome()" id="editor-home-btn" class="text-sm font-bold flex items-center gap-1 px-2 py-1 rounded-lg active:bg-black/5 shrink-0">
+        ← 홈
+      </button>
+      <div class="flex items-center gap-2.5">
+        <button onclick="toggleAllChecklists()" id="all-check-square" title="전체 체크 / 해제"
+          class="w-[18px] h-[18px] rounded border-[1.8px] flex items-center justify-center text-[10px] font-bold transition active:scale-90">
+        </button>
+        <button onclick="openEditorDrawer()" id="editor-more-btn" title="노트 설정 메뉴"
+          class="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-1 active:bg-black/10 transition">
+          <span class="w-1 h-1 rounded-full bg-current"></span>
+          <span class="w-1 h-1 rounded-full bg-current"></span>
+          <span class="w-1 h-1 rounded-full bg-current"></span>
+        </button>
+      </div>
+    </div>
+
+    <div id="linked-chips-bar" class="hidden px-4 py-2 bg-black/[0.04] border-b border-black/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"></div>
+
+    <!-- 속지 본문 (빈 속지 칸을 직접 터치하면 바로 그 줄에 글쓰기 가능) -->
+    <div id="editor-canvas" onclick="handleCanvasDirectClick(event)" class="flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar flex flex-col">
+      <input id="editor-title-input" type="text" placeholder="제목을 입력하세요..."
+        oninput="updateCurrentTitle(this.value)"
+        class="w-full text-lg font-bold bg-transparent border-none outline-none h-8 leading-8 my-2 shrink-0" />
+
+      <div id="blocks-container" class="space-y-4"></div>
+
+      <!-- 빈 속지 영역: 여기를 터치하면 칸에 맞춰 바로 텍스트 줄이 생성됨 -->
+      <div id="empty-sheet-tap-zone" class="flex-1 min-h-[160px] cursor-text"></div>
+    </div>
+
+    <div id="undo-toast" class="hidden fixed bottom-20 inset-x-4 max-w-[568px] mx-auto bg-purple-950 text-white px-4 py-3 rounded-2xl shadow-lg flex justify-between items-center z-30 text-xs font-bold">
+      <span>항목이 삭제되었습니다.</span>
+      <button onclick="undoDeleteBlock()" class="px-3 py-1 bg-white text-purple-950 rounded-lg font-bold">실행취소</button>
+    </div>
+
+    <!-- 2번: 연보라색 통일 하단 버튼 -->
+    <div class="fixed bottom-0 inset-x-0 max-w-[600px] mx-auto bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2.5 z-20 flex gap-2">
+      <button onclick="addSameAsLastBlock()" id="quick-add-same-btn"
+        class="flex-1 py-3 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
+        틀 추가 (좌측 사진형)
+      </button>
+      <button onclick="openAddBlockModal()"
+        class="flex-1 py-3 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
+        새로운 틀 추가
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 2-2. 에디터 점 3개(⋮) 우측 슬라이드 드로어 ================= -->
+  <div id="editor-drawer-backdrop" class="hidden fixed inset-0 bg-black/35 z-40 flex justify-end" onclick="closeEditorDrawer(event)">
+    <div id="editor-drawer-panel" class="side-drawer-panel w-[310px] max-w-[86%] h-full bg-white shadow-2xl p-5 flex flex-col overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center pb-3 mb-4 border-b border-gray-100">
+        <span class="text-sm font-bold text-gray-900">노트 옵션</span>
+        <button onclick="closeEditorDrawer()" class="w-7 h-7 rounded-lg bg-[#EDE9FE] text-xs font-bold text-purple-950">✕</button>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-500 mb-2">파일 연결</div>
+        <button onclick="closeEditorDrawer(); openLinkModal();"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-[#EDE9FE] hover:bg-[#E4DDFD] text-left text-xs font-bold text-purple-950 flex justify-between items-center">
+          <span>연관 노트 묶기 / 해제</span>
+          <span>→</span>
+        </button>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-500 mb-2">완료 상태 표시</div>
+        <div class="grid grid-cols-2 gap-1.5 bg-[#F5F3FF] p-1 rounded-xl">
+          <button onclick="setCompletedSortMode('bottom')" id="drawer-sort-bottom"
+            class="py-2 rounded-lg text-xs font-bold transition">
+            완료 아래로
+          </button>
+          <button onclick="setCompletedSortMode('stay')" id="drawer-sort-stay"
+            class="py-2 rounded-lg text-xs font-bold transition">
+            제자리 유지
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-500 mb-2">속지 변경</div>
+        <div class="flex items-center gap-2 flex-wrap mb-2.5" id="drawer-bg-colors"></div>
+        <div class="grid grid-cols-4 gap-1.5" id="drawer-papers"></div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray-500 mb-2">틀 변경 (기존 항목 일괄 적용)</div>
+        <div class="flex items-center gap-2 flex-wrap mb-2.5" id="drawer-block-colors"></div>
+        <div id="drawer-layout-carousel" onscroll="handlePagedCarouselScroll('drawer')" class="paged-carousel-track no-scrollbar"></div>
+        <div id="drawer-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3. 새 노트 속지 & 틀 선택 바텀 시트 (연보라색 포인트 적용) ================= -->
+  <div id="create-sheet-backdrop" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeCreateSheet(event)">
+    <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
+      <h2 class="text-base font-bold text-gray-900 mb-3">새 포스트잇 속지 & 틀 설정</h2>
+
+      <div class="mb-4">
+        <div class="text-[11px] font-semibold text-gray-500 mb-1.5">실물 미리보기</div>
+        <div id="preview-box" class="px-4 py-3 rounded-2xl border border-black/10 shadow-inner transition-all paper-grid" style="background-color: #FEF9C3;">
+          <div id="preview-title-text" class="text-sm font-bold leading-8 mb-1">새 체크리스트 제목</div>
+          <div id="preview-block-render"></div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray-700 mb-2">1. 속지 배경색</div>
+        <div class="flex items-center gap-2.5 flex-wrap" id="sheet-bg-color-picker"></div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray-700 mb-2">2. 속지 무늬</div>
+        <div class="grid grid-cols-4 gap-2" id="paper-picker"></div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray-700 mb-2">3. 기본 체크리스트 틀 색상</div>
+        <div class="flex items-center gap-2.5 flex-wrap" id="sheet-block-color-picker"></div>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-700 mb-2">4. 체크리스트 틀 선택 (옆으로 스와이프)</div>
+        <div id="sheet-layout-carousel" onscroll="handlePagedCarouselScroll('sheet')" class="paged-carousel-track no-scrollbar"></div>
+        <div id="sheet-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
+      </div>
+
+      <button onclick="confirmCreateNote()" class="w-full py-3.5 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-2xl text-sm font-bold shadow-sm active:scale-98">
+        이 속지로 작성 시작하기
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 4. 에디터 내 새로운 틀 추가 모달 ================= -->
+  <div id="add-block-modal" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeAddBlockModal(event)">
+    <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
+      <h3 class="text-sm font-bold text-gray-900 mb-3">새로운 틀 추가</h3>
+
+      <div class="mb-3.5">
+        <div class="text-[11px] font-bold text-gray-600 mb-1.5">틀 배경색</div>
+        <div class="flex items-center gap-2 flex-wrap" id="modal-block-color-picker"></div>
+      </div>
+
+      <div class="mb-3">
+        <div class="text-[11px] font-bold text-gray-600 mb-1.5">틀 모양 (옆으로 스와이프 후 터치하여 추가)</div>
+        <div id="modal-layout-carousel" onscroll="handlePagedCarouselScroll('modal')" class="paged-carousel-track no-scrollbar"></div>
+        <div id="modal-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 5. 개인별 독립 공간(프로필) 관리 모달 ================= -->
+  <div id="profile-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-5" onclick="closeProfileModal(event)">
+    <div class="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
+      <h3 class="text-base font-bold text-gray-900 mb-1">개인 사용 공간 선택</h3>
+      <p class="text-xs text-gray-500 mb-4">사용자마다 독립된 보관함에 노트와 사진이 따로 저장됩니다.</p>
+
+      <div id="profile-list" class="space-y-2 mb-4 max-h-52 overflow-y-auto no-scrollbar"></div>
+
+      <div class="flex gap-2 pt-2 border-t border-gray-100">
+        <input id="new-profile-name" type="text" placeholder="새 사용자 이름 (예: 세라)"
+          class="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
+        <button onclick="createNewProfile()" class="px-3.5 py-2 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0">
+          + 추가
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 6. 커스텀 컬러 피커 모달 ================= -->
+  <div id="custom-color-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5" onclick="closeCustomColorModal(event)">
+    <div class="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
+      <div id="cp-sv-panel" class="sv-panel mb-4" style="background-color: #ff0000;">
+        <div class="sv-white"></div>
+        <div class="sv-black"></div>
+        <div id="cp-sv-thumb" class="sv-thumb" style="left: 15%; top: 10%;"></div>
+      </div>
+
+      <div id="cp-hue-bar" class="hue-bar mb-5">
+        <div id="cp-hue-thumb" class="hue-thumb" style="left: 0%; background-color: #ff0000;"></div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div id="cp-preview-swatch" class="w-11 h-11 rounded-xl border border-gray-200 shadow-inner shrink-0" style="background-color: #ffffff;"></div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-gray-500">Hex</span>
+          <input id="cp-hex-input" type="text" maxlength="6" value="FFFFFF" oninput="handleHexInput(this.value)"
+            class="w-28 px-3 py-2 bg-[#F5F3FF] rounded-xl text-sm font-bold text-gray-800 text-center uppercase outline-none focus:ring-2 focus:ring-purple-400" />
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-600 mb-2">최근 사용</div>
+        <div id="cp-recent-list" class="flex items-center gap-2.5 flex-wrap"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeCustomColorModal()" class="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold">취소</button>
+        <button onclick="applyCustomColor()" class="flex-1 py-2.5 rounded-xl bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-xs font-bold">이 색상 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 7. 기존 파일 선택형 연결 모달 ================= -->
+  <div id="link-file-modal" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeLinkModal(event)">
+    <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl max-h-[75dvh] flex flex-col" onclick="event.stopPropagation()">
+      <h3 class="text-sm font-bold text-gray-900 mb-1">함께 묶을 노트 선택</h3>
+      <p class="text-xs text-gray-500 mb-3">선택한 노트들이 겹쳐진 사각형 카드로 함께 묶입니다.</p>
+      <div id="linkable-files-list" class="flex-1 overflow-y-auto space-y-2 mb-4 no-scrollbar"></div>
+      <button onclick="closeLinkModal()" class="w-full py-3 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-sm font-bold">선택 완료</button>
+    </div>
+  </div>
+
+  <!-- ================= 1-3. 점 3개(⋮) 바로 아래쪽에 뜨는 미니 팝오버 메뉴 ================= -->
+  <div id="card-popover-backdrop" class="hidden fixed inset-0 z-40" onclick="closeCardPopover()">
+    <div id="card-mini-popover" class="mini-popover" onclick="event.stopPropagation()">
+      <button type="button" onclick="duplicateTargetNote()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-gray-800">
+        복사
+      </button>
+      <button type="button" onclick="exportNoteAsJPG()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-gray-800">
+        JPG 변환
+      </button>
+      <button type="button" onclick="exportNoteAsPDF()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-gray-800">
+        PDF 변환
+      </button>
+      <div class="my-1 border-t border-gray-100"></div>
+      <button type="button" onclick="moveTargetNoteToTrash()" class="w-full py-2 px-3 rounded-lg hover:bg-red-50 text-left text-xs font-bold text-red-600">
+        삭제
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 8. 사진 전체화면 확대/축소 & 삭제(라이트박스) ================= -->
+  <div id="lightbox-modal" class="hidden fixed inset-0 bg-black/95 z-40 flex flex-col justify-between p-4" onclick="closeLightbox()">
+    <div class="flex justify-between items-center text-white z-10" onclick="event.stopPropagation()">
+      <span class="text-xs font-semibold" id="lightbox-counter">1 / 1</span>
+      <div class="flex items-center gap-2">
+        <button onclick="deleteCurrentLightboxPhoto()" class="text-xs font-bold bg-red-600 text-white px-3 py-1.5 rounded-full active:scale-95">사진 삭제</button>
+        <button onclick="closeLightbox()" class="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full">닫기</button>
+      </div>
+    </div>
+
+    <div id="lightbox-viewport" class="flex-1 overflow-auto flex items-center justify-center my-2" onclick="event.stopPropagation()">
+      <img id="lightbox-img" src="" ondblclick="toggleDoubleTapZoom()"
+        style="transform: scale(1); transform-origin: center center; transition: transform 0.15s ease;"
+        class="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
+    </div>
+
+    <div class="flex flex-col items-center gap-2 pb-3 z-10" onclick="event.stopPropagation()">
+      <div class="flex items-center gap-2 bg-white/15 px-3 py-1.5 rounded-full text-white text-xs font-bold">
+        <button onclick="changeLightboxZoom(-0.4)" class="px-2 py-0.5 bg-white/20 rounded-full">- 축소</button>
+        <span id="lightbox-zoom-label" class="w-12 text-center">100%</span>
+        <button onclick="changeLightboxZoom(0.4)" class="px-2 py-0.5 bg-white/20 rounded-full">+ 확대</button>
+        <button onclick="resetLightboxZoom()" class="px-2 py-0.5 bg-white/10 rounded-full text-[10px]">원본</button>
+      </div>
+      <div class="flex justify-center gap-3">
+        <button onclick="prevLightboxImg()" class="px-4 py-2 bg-white/20 text-white rounded-xl text-xs font-bold">← 이전 사진</button>
+        <button onclick="nextLightboxImg()" class="px-4 py-2 bg-white/20 text-white rounded-xl text-xs font-bold">다음 사진 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="print-area" class="hidden"></div>
+<input type="file" id="hidden-file-input" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)" />
+
+<script>
+  // ================= 개인별 독립 공간 + IndexedDB / localStorage 이중 영구 저장 =================
+  const DB_NAME = 'PostitHybridApp_DB_v1';
+  const STORE_NAME = 'userSpaces';
+  const META_KEY = 'postit_profiles_meta_v1';
+  let dbInstance = null;
+
+  let profiles = [{ id: 'user_default', name: '내 공간' }];
+  let currentProfileId = 'user_default';
+
+  function openAppDB() {
+    return new Promise((resolve) => {
+      if (!window.indexedDB) { resolve(null); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      req.onsuccess = (e) => {
+        dbInstance = e.target.result;
+        resolve(dbInstance);
+      };
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  function saveProfilesMeta() {
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify({ profiles, currentProfileId }));
+    } catch (_) {}
+  }
+
+  function loadProfilesMeta() {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
+          profiles = parsed.profiles;
+          currentProfileId = parsed.currentProfileId || profiles[0].id;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 최초 실행 사용자에게 제공되는 '앱 사용 설명서' 노트 1개
+  function getInitialGuideNotes() {
+    return [
+      {
+        id: 'guide_note_1',
+        title: '앱 사용 가이드',
+        parentId: null,
+        bgColor: '#FEF9C3',
+        paper: 'grid',
+        blocks: [
+          {
+            id: 'gb_1',
+            type: 'plain-text',
+            done: false,
+            title: '',
+            memo: '속지 빈 칸을 톡 누르면 별도 상자 없이 줄에 맞춰 바로 글을 쓸 수 있습니다.',
+            cardBg: 'transparent',
+            photos: []
+          },
+          {
+            id: 'gb_2',
+            type: 'left-photo',
+            done: false,
+            title: '하단 버튼으로 틀 추가',
+            memo: '좌측 손잡이(⋮⋮)를 잡아 위아래로 순서를 바꿀 수 있습니다.',
+            cardBg: 'rgba(255,255,255,0.92)',
+            photos: []
+          },
+          {
+            id: 'gb_3',
+            type: 'split-slim',
+            done: false,
+            done2: true,
+            title: '2분할 슬림바 좌측',
+            title2: '2분할 슬림바 우측',
+            memo: '',
+            cardBg: 'rgba(255,255,255,0.92)',
+            photos: []
+          },
+          {
+            id: 'gb_4',
+            type: 'slim',
+            done: false,
+            title: '우측 상단 점 3개(⋮)에서 속지·틀·파일 연결 변경',
+            memo: '',
+            cardBg: 'rgba(255,255,255,0.92)',
+            photos: []
+          }
+        ]
+      }
+    ];
+  }
+
+  function saveStateToDB() {
+    const payload = {
+      notes,
+      trashedNotes,
+      recentTabIds,
+      baseBgColors,
+      baseBlockColors,
+      cpRecentColors
+    };
+
+    // 1차: IndexedDB 저장 (고화질 사진 및 대용량 데이터 영구 보존)
+    if (dbInstance) {
+      try {
+        const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(payload, currentProfileId);
+      } catch (_) {}
+    }
+
+    // 2차: localStorage 백업 저장
+    try {
+      localStorage.setItem(`postit_backup_${currentProfileId}`, JSON.stringify(payload));
+    } catch (_) {}
+  }
+
+  function loadStateFromDB(profileId) {
+    return new Promise((resolve) => {
+      const tryLocalFallback = () => {
+        try {
+          const raw = localStorage.getItem(`postit_backup_${profileId}`);
+          resolve(raw ? JSON.parse(raw) : null);
+        } catch (_) {
+          resolve(null);
+        }
+      };
+
+      if (!dbInstance) {
+        tryLocalFallback();
+        return;
+      }
+      try {
+        const tx = dbInstance.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(profileId);
+        req.onsuccess = () => {
+          if (req.result) resolve(req.result);
+          else tryLocalFallback();
+        };
+        req.onerror = () => tryLocalFallback();
+      } catch (_) {
+        tryLocalFallback();
+      }
+    });
+  }
+
+  let notes = getInitialGuideNotes();
+  let trashedNotes = [];
+
+  let gridCols = 2;
+  let activeFolderId = null;
+  let currentNoteId = null;
+  let recentTabIds = ['guide_note_1'];
+  let linkingRootId = null;
+  let actionTargetNoteId = null;
+  let isFolderCardDragging = false;
+  let isSpreadingGroup = false;
+
+  let completedSortMode = 'bottom';
+
+  let dragInfo = {
+    timer: null,
+    active: false,
+    blockId: null,
+    el: null,
+    startX: 0,
+    startY: 0,
+    pointerId: null
+  };
+
+  let folderDragInfo = {
+    timer: null,
+    active: false,
+    noteId: null,
+    el: null,
+    startX: 0,
+    startY: 0,
+    pointerId: null
+  };
+
+  let lastDeletedBlockInfo = null;
+  let undoToastTimer = null;
+
+  let baseBgColors = ['#FEF9C3', '#FFFFFF', '#FCE7F3', '#DCFCE7', '#E0F2FE', '#EDE9FE'];
+  let baseBlockColors = ['transparent', 'rgba(255,255,255,0.95)', '#FEF9C3', '#FCE7F3', '#DCFCE7', '#EDE9FE'];
+
+  let draftColor = '#FEF9C3';
+  let draftPaper = 'grid';
+  let draftBlockColor = 'rgba(255,255,255,0.95)';
+  let draftLayout = 'left-photo';
+  let modalNewBlockColor = 'rgba(255,255,255,0.95)';
+
+  let carouselPages = {
+    sheet: 0,
+    modal: 0,
+    drawer: 0
+  };
+
+  let uploadingBlockId = null;
+  let lightboxBlockId = null;
+  let lightboxIndex = 0;
+  let lightboxZoom = 1;
+
+  let cpTarget = null;
+  let cpHue = 0;
+  let cpSat = 0;
+  let cpVal = 1;
+  let cpRecentColors = ['#EDE9FE', '#FEF08A', '#FBCFE8', '#BAE6FD'];
+
+  const PAPERS = [
+    { id: 'plain', label: '무지' },
+    { id: 'lined', label: '줄노트' },
+    { id: 'grid', label: '모눈' },
+    { id: 'dot', label: '도트' }
+  ];
+
+  // 4번 & 5번: '사진만', '2분할 슬림바' 추가 및 '텍스트' 포함 총 8종 (1페이지당 3개씩 스와이프)
+  const ALL_LAYOUTS = [
+    { id: 'left-photo', label: '좌측 사진형' },
+    { id: 'right-photo', label: '우측 사진형' },
+    { id: 'top-photo', label: '상단 큰사진' },
+    { id: 'photo-only', label: '사진만' },
+    { id: 'slim', label: '한줄 슬림바' },
+    { id: 'split-slim', label: '2분할 슬림바' },
+    { id: 'memo', label: '제목+메모형' },
+    { id: 'plain-text', label: '텍스트' }
+  ];
+  const ITEMS_PER_PAGE = 3;
+
+  function isDarkColor(colorStr) {
+    if (!colorStr || colorStr === 'transparent') return false;
+    if (colorStr.startsWith('rgba') || colorStr.startsWith('rgb')) {
+      const nums = colorStr.match(/[\d.]+/g);
+      if (!nums || nums.length < 3) return false;
+      const r = Number(nums[0]), g = Number(nums[1]), b = Number(nums[2]);
+      return (r * 299 + g * 587 + b * 114) / 1000 < 135;
+    }
+    let hex = colorStr.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    if (hex.length !== 6) return false;
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 < 135;
+  }
+
+  function getContrastTheme(bgColor, fallbackParentBg) {
+    const effectiveBg = (!bgColor || bgColor === 'transparent') ? (fallbackParentBg || '#FFFFFF') : bgColor;
+    const dark = isDarkColor(effectiveBg);
+    return {
+      isDark: dark,
+      titleColor: dark ? '#F9FAFB' : '#111827',
+      subColor: dark ? '#D1D5DB' : '#4B5563',
+      mutedColor: dark ? '#9CA3AF' : '#9CA3AF',
+      borderColor: dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.12)',
+      lineColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
+      dotColor: dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.2)',
+      checkBorder: dark ? '#D1D5DB' : '#6B7280',
+      checkDoneBg: dark ? '#F9FAFB' : '#7C3AED',
+      checkDoneText: dark ? '#111827' : '#FFFFFF',
+      chipBg: dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.06)'
+    };
+  }
+
+  function getLayoutLabel(type) {
+    return ALL_LAYOUTS.find(x => x.id === type)?.label || '기본형';
+  }
+
+  function getLayoutWireframeSVG(type, isSelected) {
+    const stroke = isSelected ? '#4C1D95' : '#4B5563';
+    const fillSoft = isSelected ? '#DDD6FE' : '#E5E7EB';
+    const accent = isSelected ? '#A78BFA' : '#D1D5DB';
+
+    if (type === 'left-photo') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="4" y="8" width="10" height="10" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="19" y="8" width="26" height="38" rx="4" fill="${accent}"/>
+          <rect x="51" y="10" width="43" height="7" rx="2" fill="${stroke}"/>
+          <rect x="51" y="23" width="35" height="5" rx="2" fill="${fillSoft}"/>
+          <rect x="51" y="33" width="28" height="5" rx="2" fill="${fillSoft}"/>
+        </svg>`;
+    }
+    if (type === 'right-photo') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="4" y="8" width="10" height="10" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="19" y="10" width="43" height="7" rx="2" fill="${stroke}"/>
+          <rect x="19" y="23" width="35" height="5" rx="2" fill="${fillSoft}"/>
+          <rect x="19" y="33" width="28" height="5" rx="2" fill="${fillSoft}"/>
+          <rect x="68" y="8" width="26" height="38" rx="4" fill="${accent}"/>
+        </svg>`;
+    }
+    if (type === 'top-photo') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="4" y="6" width="9" height="9" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="18" y="7" width="48" height="7" rx="2" fill="${stroke}"/>
+          <rect x="4" y="21" width="28" height="27" rx="4" fill="${accent}"/>
+          <rect x="36" y="21" width="28" height="27" rx="4" fill="${accent}"/>
+          <rect x="68" y="21" width="28" height="27" rx="4" fill="${fillSoft}"/>
+        </svg>`;
+    }
+    if (type === 'photo-only') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="6" y="8" width="40" height="38" rx="5" fill="${accent}"/>
+          <rect x="54" y="8" width="40" height="38" rx="5" fill="${fillSoft}"/>
+        </svg>`;
+    }
+    if (type === 'split-slim') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="4" y="21" width="10" height="10" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="18" y="22" width="27" height="8" rx="2.5" fill="${stroke}"/>
+          <line x1="50" y1="15" x2="50" y2="39" stroke="${fillSoft}" stroke-width="2"/>
+          <rect x="55" y="21" width="10" height="10" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="69" y="22" width="27" height="8" rx="2.5" fill="${stroke}"/>
+        </svg>`;
+    }
+    if (type === 'memo') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="4" y="8" width="10" height="10" rx="2" fill="none" stroke="${stroke}" stroke-width="2"/>
+          <rect x="20" y="9" width="52" height="8" rx="2" fill="${stroke}"/>
+          <rect x="20" y="24" width="74" height="6" rx="2" fill="${fillSoft}"/>
+          <rect x="20" y="35" width="60" height="6" rx="2" fill="${fillSoft}"/>
+        </svg>`;
+    }
+    if (type === 'plain-text') {
+      return `
+        <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+          <rect x="10" y="12" width="80" height="6" rx="2" fill="${stroke}"/>
+          <rect x="10" y="24" width="68" height="6" rx="2" fill="${fillSoft}"/>
+          <rect x="10" y="36" width="52" height="6" rx="2" fill="${fillSoft}"/>
+        </svg>`;
+    }
+    return `
+      <svg viewBox="0 0 100 54" class="w-full h-11 mb-1">
+        <rect x="4" y="20" width="12" height="12" rx="2.5" fill="none" stroke="${stroke}" stroke-width="2"/>
+        <rect x="22" y="22" width="72" height="9" rx="3" fill="${stroke}"/>
+      </svg>`;
+  }
+
+  // ================= 5번: 개인별 독립 공간(프로필) 관리 =================
+  function openProfileModal() {
+    renderProfileList();
+    document.getElementById('profile-modal').classList.remove('hidden');
+  }
+
+  function closeProfileModal(e) {
+    if (!e || e.target.id === 'profile-modal') {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+  }
+
+  function renderProfileList() {
+    document.getElementById('profile-list').innerHTML = profiles.map(p => {
+      const isCurrent = p.id === currentProfileId;
+      return `
+        <div onclick="switchProfile('${p.id}')"
+          class="p-3 rounded-xl border flex justify-between items-center cursor-pointer ${
+            isCurrent ? 'border-purple-400 bg-[#EDE9FE] text-purple-950' : 'border-gray-200 bg-gray-50 text-gray-800'
+          }">
+          <span class="text-xs font-bold">${p.name}</span>
+          <span class="text-[11px] font-bold">${isCurrent ? '현재 사용 중' : '전환'}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function switchProfile(profileId) {
+    if (profileId === currentProfileId) {
+      closeProfileModal();
+      return;
+    }
+    saveStateToDB();
+    currentProfileId = profileId;
+    saveProfilesMeta();
+
+    const loaded = await loadStateFromDB(profileId);
+    if (loaded && Array.isArray(loaded.notes)) {
+      notes = loaded.notes;
+      trashedNotes = loaded.trashedNotes || [];
+      recentTabIds = loaded.recentTabIds || [];
+    } else {
+      notes = getInitialGuideNotes();
+      trashedNotes = [];
+      recentTabIds = ['guide_note_1'];
+      saveStateToDB();
+    }
+    activeFolderId = null;
+    closeProfileModal();
+    renderHome();
+  }
+
+  async function createNewProfile() {
+    const input = document.getElementById('new-profile-name');
+    const name = input.value.trim();
+    if (!name) return;
+    const newId = 'user_' + Date.now();
+    profiles.push({ id: newId, name });
+    saveProfilesMeta();
+    input.value = '';
+    await switchProfile(newId);
+  }
+
+  // ================= 7번: 속지 빈 칸을 직접 터치하면 바로 줄에 맞춰 텍스트 입력 =================
+  function handleCanvasDirectClick(e) {
+    // 기존 블록 카드나 제목을 직접 누른 것이 아니라 속지의 빈 칸을 눌렀을 때만 동작
+    if (e.target.closest('.block-item') || e.target.id === 'editor-title-input') return;
+
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+
+    // 마지막 블록이 이미 비어있는 순수 텍스트 줄이면 거기에 바로 포커스
+    const lastBlock = note.blocks[note.blocks.length - 1];
+    if (lastBlock && lastBlock.type === 'plain-text' && !lastBlock.memo.trim()) {
+      const lastTa = document.querySelector(`[data-block-id="${lastBlock.id}"] textarea`);
+      if (lastTa) { lastTa.focus(); return; }
+    }
+
+    // 아니면 클릭한 위치 바로 아래에 테두리 없는 순수 속지 줄글 블록을 생성하고 즉시 커서 활성화
+    const newId = 'b' + Date.now();
+    note.blocks.push({
+      id: newId,
+      type: 'plain-text',
+      done: false,
+      title: '',
+      memo: '',
+      cardBg: 'transparent',
+      photos: []
+    });
+    saveStateToDB();
+    renderEditor();
+
+    requestAnimationFrame(() => {
+      const ta = document.querySelector(`[data-block-id="${newId}"] textarea`);
+      if (ta) {
+        autoResizeSheetLine(ta);
+        ta.focus();
+      }
+    });
+  }
+
+  function autoResizeSheetLine(el) {
+    el.style.height = '32px';
+    const snapped = Math.max(32, Math.ceil(el.scrollHeight / 32) * 32);
+    el.style.height = snapped + 'px';
+  }
+
+  // ================= 1페이지당 3개씩 노출되는 손가락 가로 스와이프 캐러셀 =================
+  function renderPagedLayoutCarousel(targetKey, selectedId, onClickFnName) {
+    const track = document.getElementById(`${targetKey}-layout-carousel`);
+    const dotsWrap = document.getElementById(`${targetKey}-layout-dots`);
+    if (!track || !dotsWrap) return;
+
+    const totalPages = Math.ceil(ALL_LAYOUTS.length / ITEMS_PER_PAGE);
+    let pagesHTML = '';
+
+    for (let p = 0; p < totalPages; p++) {
+      const slice = ALL_LAYOUTS.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
+      const cardsHTML = slice.map(l => {
+        const isSelected = l.id === selectedId;
+        return `
+          <button type="button" onclick="${onClickFnName}('${l.id}', ${p})"
+            class="p-2.5 rounded-2xl border flex flex-col items-center text-center transition ${
+              isSelected ? 'border-purple-400 bg-[#EDE9FE] text-purple-950 shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-700'
+            }">
+            ${getLayoutWireframeSVG(l.id, isSelected)}
+            <div class="text-[11px] font-bold truncate w-full">${l.label}</div>
+          </button>
+        `;
+      }).join('');
+      pagesHTML += `<div class="paged-carousel-page">${cardsHTML}</div>`;
+    }
+
+    track.innerHTML = pagesHTML;
+    const savedPage = carouselPages[targetKey] || 0;
+    requestAnimationFrame(() => {
+      if (track.clientWidth > 0) {
+        track.scrollLeft = track.clientWidth * savedPage;
+      }
+    });
+    renderPagedDots(targetKey);
+  }
+
+  function renderPagedDots(targetKey) {
+    const dotsWrap = document.getElementById(`${targetKey}-layout-dots`);
+    if (!dotsWrap) return;
+    const totalPages = Math.ceil(ALL_LAYOUTS.length / ITEMS_PER_PAGE);
+    const activePage = carouselPages[targetKey] || 0;
+
+    dotsWrap.innerHTML = Array.from({ length: totalPages }).map((_, pageIdx) => `
+      <button type="button" onclick="goToCarouselPage('${targetKey}', ${pageIdx})"
+        class="h-2 rounded-full transition-all ${
+          pageIdx === activePage ? 'w-5 bg-purple-400' : 'w-2 bg-gray-300'
+        }"></button>
+    `).join('');
+  }
+
+  function handlePagedCarouselScroll(targetKey) {
+    const track = document.getElementById(`${targetKey}-layout-carousel`);
+    if (!track || track.clientWidth === 0) return;
+    const pageIdx = Math.round(track.scrollLeft / track.clientWidth);
+    if (carouselPages[targetKey] !== pageIdx) {
+      carouselPages[targetKey] = pageIdx;
+      renderPagedDots(targetKey);
+    }
+  }
+
+  function goToCarouselPage(targetKey, pageIdx) {
+    const track = document.getElementById(`${targetKey}-layout-carousel`);
+    if (!track) return;
+    carouselPages[targetKey] = pageIdx;
+    track.scrollTo({ left: track.clientWidth * pageIdx, behavior: 'smooth' });
+    renderPagedDots(targetKey);
+  }
+
+  // ================= 커스텀 컬러 피커 로직 =================
+  function hsvToHex(h, s, v) {
+    let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+    const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0').toUpperCase();
+    return `#${toHex(f(5))}${toHex(f(3))}${toHex(f(1))}`;
+  }
+
+  function hexToHsv(hex) {
+    let clean = hex.replace('#', '');
+    if (clean.length !== 6) return null;
+    const r = parseInt(clean.substring(0, 2), 16) / 255;
+    const g = parseInt(clean.substring(2, 4), 16) / 255;
+    const b = parseInt(clean.substring(4, 6), 16) / 255;
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
+
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+
+    if (max !== min) {
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h *= 60;
+    }
+    return { h, s, v };
+  }
+
+  function openCustomColorModal(target, initialHex) {
+    cpTarget = target;
+    const startHex = (initialHex && initialHex.startsWith('#')) ? initialHex : '#FFFFFF';
+    const parsed = hexToHsv(startHex) || { h: 0, s: 0, v: 1 };
+    cpHue = parsed.h;
+    cpSat = parsed.s;
+    cpVal = parsed.v;
+    updateColorPickerUI();
+    document.getElementById('custom-color-modal').classList.remove('hidden');
+  }
+
+  function closeCustomColorModal(e) {
+    if (!e || e.target.id === 'custom-color-modal') {
+      document.getElementById('custom-color-modal').classList.add('hidden');
+    }
+  }
+
+  function updateColorPickerUI() {
+    const pureHueHex = hsvToHex(cpHue, 1, 1);
+    const currentHex = hsvToHex(cpHue, cpSat, cpVal);
+
+    document.getElementById('cp-sv-panel').style.backgroundColor = pureHueHex;
+    const svThumb = document.getElementById('cp-sv-thumb');
+    svThumb.style.left = `${cpSat * 100}%`;
+    svThumb.style.top = `${(1 - cpVal) * 100}%`;
+
+    const hueThumb = document.getElementById('cp-hue-thumb');
+    hueThumb.style.left = `${(cpHue / 360) * 100}%`;
+    hueThumb.style.backgroundColor = pureHueHex;
+
+    document.getElementById('cp-preview-swatch').style.backgroundColor = currentHex;
+    document.getElementById('cp-hex-input').value = currentHex.replace('#', '');
+
+    document.getElementById('cp-recent-list').innerHTML = cpRecentColors.map(hex => `
+      <button onclick="selectRecentPickerColor('${hex}')"
+        style="background-color:${hex}"
+        class="w-9 h-9 rounded-xl border border-gray-200 shadow-sm active:scale-95"></button>
+    `).join('');
+  }
+
+  function selectRecentPickerColor(hex) {
+    const parsed = hexToHsv(hex);
+    if (!parsed) return;
+    cpHue = parsed.h;
+    cpSat = parsed.s;
+    cpVal = parsed.v;
+    updateColorPickerUI();
+  }
+
+  function handleHexInput(val) {
+    const clean = val.replace(/[^0-9a-fA-F]/g, '');
+    if (clean.length === 6) {
+      const parsed = hexToHsv('#' + clean);
+      if (parsed) {
+        cpHue = parsed.h;
+        cpSat = parsed.s;
+        cpVal = parsed.v;
+        updateColorPickerUI();
+      }
+    }
+  }
+
+  function applyCustomColor() {
+    const finalHex = hsvToHex(cpHue, cpSat, cpVal);
+    if (!cpRecentColors.includes(finalHex)) {
+      cpRecentColors.unshift(finalHex);
+      if (cpRecentColors.length > 6) cpRecentColors.pop();
+    }
+
+    if (cpTarget === 'sheet-bg') {
+      if (!baseBgColors.includes(finalHex)) baseBgColors.push(finalHex);
+      draftColor = finalHex;
+      renderCreateSheetControls();
+    } else if (cpTarget === 'sheet-block') {
+      if (!baseBlockColors.includes(finalHex)) baseBlockColors.push(finalHex);
+      draftBlockColor = finalHex;
+      renderCreateSheetControls();
+    } else if (cpTarget === 'modal-block') {
+      if (!baseBlockColors.includes(finalHex)) baseBlockColors.push(finalHex);
+      modalNewBlockColor = finalHex;
+      renderModalLayouts();
+    } else if (cpTarget === 'drawer-bg') {
+      if (!baseBgColors.includes(finalHex)) baseBgColors.push(finalHex);
+      setCurrentNoteBgColor(finalHex);
+      renderDrawerControls();
+    } else if (cpTarget === 'drawer-block') {
+      if (!baseBlockColors.includes(finalHex)) baseBlockColors.push(finalHex);
+      setAllBlocksCardBg(finalHex);
+      renderDrawerControls();
+    }
+    saveStateToDB();
+    closeCustomColorModal();
+  }
+
+  (function initColorPickerGestures() {
+    let draggingSV = false;
+    let draggingHue = false;
+
+    const updateSV = (clientX, clientY) => {
+      const rect = document.getElementById('cp-sv-panel').getBoundingClientRect();
+      const x = Math.min(Math.max(0, clientX - rect.left), rect.width);
+      const y = Math.min(Math.max(0, clientY - rect.top), rect.height);
+      cpSat = x / rect.width;
+      cpVal = 1 - (y / rect.height);
+      updateColorPickerUI();
+    };
+
+    const updateHue = (clientX) => {
+      const rect = document.getElementById('cp-hue-bar').getBoundingClientRect();
+      const x = Math.min(Math.max(0, clientX - rect.left), rect.width);
+      cpHue = (x / rect.width) * 360;
+      updateColorPickerUI();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const svPanel = document.getElementById('cp-sv-panel');
+      const hueBar = document.getElementById('cp-hue-bar');
+
+      svPanel.addEventListener('pointerdown', (e) => {
+        draggingSV = true;
+        svPanel.setPointerCapture(e.pointerId);
+        updateSV(e.clientX, e.clientY);
+      });
+      svPanel.addEventListener('pointermove', (e) => { if (draggingSV) updateSV(e.clientX, e.clientY); });
+      svPanel.addEventListener('pointerup', () => { draggingSV = false; });
+
+      hueBar.addEventListener('pointerdown', (e) => {
+        draggingHue = true;
+        hueBar.setPointerCapture(e.pointerId);
+        updateHue(e.clientX);
+      });
+      hueBar.addEventListener('pointermove', (e) => { if (draggingHue) updateHue(e.clientX); });
+      hueBar.addEventListener('pointerup', () => { draggingHue = false; });
+    });
+  })();
+
+  // ================= 홈 화면 렌더링 =================
+  function renderHome() {
+    const activeProfile = profiles.find(p => p.id === currentProfileId);
+    const profileBadge = document.getElementById('current-profile-badge');
+    if (profileBadge && activeProfile) {
+      profileBadge.textContent = `${activeProfile.name} ▾`;
+    }
+
+    const grid = document.getElementById('home-grid');
+    const backBtn = document.getElementById('home-back-btn');
+    const titleArea = document.getElementById('home-title-area');
+    const folderTitleInput = document.getElementById('folder-title-input');
+    const folderLinkBtn = document.getElementById('folder-link-header-btn');
+    document.getElementById('trash-count-badge').textContent = trashedNotes.length;
+
+    grid.className = `flex-1 overflow-y-auto px-4 pb-28 grid gap-3.5 content-start no-scrollbar ${
+      gridCols === 2 ? 'grid-cols-2' : gridCols === 3 ? 'grid-cols-3' : 'grid-cols-1'
+    }`;
+
+    let visibleNotes = [];
+    if (activeFolderId) {
+      const parent = notes.find(n => n.id === activeFolderId);
+      const children = notes.filter(n => n.parentId === activeFolderId);
+      visibleNotes = [parent, ...children].filter(Boolean);
+
+      backBtn.classList.remove('hidden');
+      folderLinkBtn.classList.remove('hidden');
+      titleArea.classList.add('hidden');
+      folderTitleInput.classList.remove('hidden');
+      folderTitleInput.value = parent.folderName || parent.title || '';
+    } else {
+      backBtn.classList.add('hidden');
+      folderLinkBtn.classList.add('hidden');
+      titleArea.classList.remove('hidden');
+      folderTitleInput.classList.add('hidden');
+      visibleNotes = notes.filter(n => n.parentId === null);
+    }
+
+    grid.innerHTML = visibleNotes.map(note => {
+      const children = notes.filter(n => n.parentId === note.id);
+      const isStackedGroup = !activeFolderId && children.length > 0;
+      const previewBlocks = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only').slice(0, gridCols === 3 ? 3 : 5);
+      const theme = getContrastTheme(note.bgColor, '#FFFFFF');
+
+      const cornerMoreBtn = `
+        <button type="button"
+          onclick="event.stopPropagation(); openCardPopover(event, '${note.id}')"
+          title="복사 · 변환 · 삭제"
+          class="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-lg flex flex-col items-center justify-center gap-[2.5px] text-gray-400 hover:text-gray-600 active:bg-black/10 z-20">
+          <span class="w-[3px] h-[3px] rounded-full bg-current"></span>
+          <span class="w-[3px] h-[3px] rounded-full bg-current"></span>
+          <span class="w-[3px] h-[3px] rounded-full bg-current"></span>
+        </button>
+      `;
+
+      if (isStackedGroup) {
+        const displayGroupTitle = note.folderName || note.title || '묶음 노트';
+        const backSheets = children.slice(0, 3);
+
+        const backSheetsHTML = backSheets.map((child, i) => {
+          const offsetX = (i + 1) * 4;
+          const offsetY = -(i + 1) * 4;
+          const rot = (i + 1) * 2.2;
+          const zIdx = 5 - i;
+          return `
+            <div style="background-color:${child.bgColor}; transform: translate(${offsetX}px, ${offsetY}px) rotate(${rot}deg); z-index:${zIdx};"
+              class="stacked-back-sheet stacked-back-${i + 1}">
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div
+            data-home-note-id="${note.id}"
+            onclick="handleStackedGroupClick(this, '${note.id}')"
+            class="stacked-note-wrap">
+            ${backSheetsHTML}
+            <div style="background-color: ${note.bgColor}; --line-color:${theme.lineColor}; --dot-color:${theme.dotColor}; border-color:${theme.borderColor};"
+              class="stacked-front-sheet rounded-2xl p-3.5 pb-6 border shadow-sm paper-${note.paper}">
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <div style="color:${theme.titleColor};" class="font-bold ${gridCols === 3 ? 'text-xs' : 'text-sm'} truncate">
+                  ${displayGroupTitle}
+                </div>
+                <span style="background:${theme.chipBg}; color:${theme.titleColor};"
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
+                  +${children.length}
+                </span>
+              </div>
+              <div class="space-y-1.5">
+                ${previewBlocks.map(b => `
+                  <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
+                    <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                      class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                      ${b.done ? '✓' : ''}
+                    </span>
+                    <span class="truncate ${b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
+                  </div>
+                `).join('')}
+              </div>
+              ${cornerMoreBtn}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div
+          data-home-note-id="${note.id}"
+          onpointerdown="startFolderNoteDragPointer(event, '${note.id}')"
+          onclick="handleCardClick('${note.id}')"
+          style="background-color: ${note.bgColor}; --line-color:${theme.lineColor}; --dot-color:${theme.dotColor}; border-color:${theme.borderColor};"
+          class="home-note-card relative rounded-2xl p-3.5 pb-6 border shadow-sm cursor-pointer transition active:scale-98 paper-${note.paper}">
+          <div style="color:${theme.titleColor};" class="font-bold ${gridCols === 3 ? 'text-xs' : 'text-sm'} truncate mb-1.5">
+            ${note.title || '제목 없음'}
+          </div>
+          <div class="space-y-1.5">
+            ${previewBlocks.map(b => `
+              <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
+                <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                  class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                  ${b.done ? '✓' : ''}
+                </span>
+                <span class="truncate ${b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
+              </div>
+            `).join('')}
+          </div>
+          ${cornerMoreBtn}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function handleStackedGroupClick(wrapEl, noteId) {
+    if (isSpreadingGroup) return;
+    isSpreadingGroup = true;
+    wrapEl.classList.add('is-spreading');
+    setTimeout(() => {
+      isSpreadingGroup = false;
+      enterFolder(noteId);
+    }, 240);
+  }
+
+  function updateFolderTitle(val) {
+    if (!activeFolderId) return;
+    const parent = notes.find(n => n.id === activeFolderId);
+    if (parent) {
+      parent.folderName = val;
+      saveStateToDB();
+    }
+  }
+
+  function startFolderNoteDragPointer(e, noteId) {
+    if (!activeFolderId) return;
+    if (e.target.closest('button')) return;
+
+    isFolderCardDragging = false;
+    clearTimeout(folderDragInfo.timer);
+
+    const cardEl = e.currentTarget;
+    folderDragInfo.startX = e.clientX;
+    folderDragInfo.startY = e.clientY;
+
+    folderDragInfo.timer = setTimeout(() => {
+      isFolderCardDragging = true;
+      folderDragInfo.active = true;
+      folderDragInfo.noteId = noteId;
+      folderDragInfo.el = cardEl;
+      folderDragInfo.pointerId = e.pointerId;
+      cardEl.classList.add('folder-card-dragging');
+      try { cardEl.setPointerCapture(e.pointerId); } catch (_) {}
+      if (navigator.vibrate) navigator.vibrate(25);
+    }, 350);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (folderDragInfo.timer && !folderDragInfo.active) {
+      const dist = Math.hypot(e.clientX - folderDragInfo.startX, e.clientY - folderDragInfo.startY);
+      if (dist > 14) {
+        clearTimeout(folderDragInfo.timer);
+        folderDragInfo.timer = null;
+      }
+    }
+
+    if (!folderDragInfo.active || !folderDragInfo.el) return;
+    e.preventDefault();
+
+    const grid = document.getElementById('home-grid');
+    const items = Array.from(grid.children);
+    const draggingEl = folderDragInfo.el;
+    const x = e.clientX;
+    const y = e.clientY;
+
+    for (const item of items) {
+      if (item === draggingEl) continue;
+      const rect = item.getBoundingClientRect();
+      const insideX = x >= rect.left && x <= rect.right;
+      const insideY = y >= rect.top && y <= rect.bottom;
+      if (insideX && insideY) {
+        const dragIdx = items.indexOf(draggingEl);
+        const targetIdx = items.indexOf(item);
+        if (dragIdx < targetIdx) {
+          grid.insertBefore(draggingEl, item.nextSibling);
+        } else {
+          grid.insertBefore(draggingEl, item);
+        }
+        break;
+      }
+    }
+  }, { passive: false });
+
+  function finishFolderCardDrag() {
+    clearTimeout(folderDragInfo.timer);
+    if (folderDragInfo.active && folderDragInfo.el) {
+      folderDragInfo.el.classList.remove('folder-card-dragging');
+      try {
+        if (folderDragInfo.pointerId !== null) folderDragInfo.el.releasePointerCapture(folderDragInfo.pointerId);
+      } catch (_) {}
+
+      const grid = document.getElementById('home-grid');
+      const orderedIds = Array.from(grid.children).map(el => el.getAttribute('data-home-note-id')).filter(Boolean);
+      if (orderedIds.length > 0 && activeFolderId) {
+        const groupSet = new Set(orderedIds);
+        const otherNotes = notes.filter(n => !groupSet.has(n.id));
+        const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
+
+        const newRoot = reorderedGroup[0];
+        const prevRoot = notes.find(n => n.id === activeFolderId);
+        const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
+        newRoot.parentId = null;
+        newRoot.folderName = savedFolderName;
+
+        for (let i = 1; i < reorderedGroup.length; i++) {
+          reorderedGroup[i].parentId = newRoot.id;
+        }
+        activeFolderId = newRoot.id;
+        notes = [...reorderedGroup, ...otherNotes];
+        saveStateToDB();
+        renderHome();
+      }
+    }
+    folderDragInfo.active = false;
+    folderDragInfo.noteId = null;
+    folderDragInfo.el = null;
+    folderDragInfo.pointerId = null;
+  }
+
+  document.addEventListener('pointerup', finishFolderCardDrag);
+  document.addEventListener('pointercancel', finishFolderCardDrag);
+
+  function handleCardClick(noteId) {
+    if (isFolderCardDragging) {
+      isFolderCardDragging = false;
+      return;
+    }
+    openNote(noteId);
+  }
+
+  function cycleGridCols() {
+    gridCols = gridCols === 2 ? 3 : gridCols === 3 ? 1 : 2;
+    document.getElementById('grid-label').textContent = `${gridCols}열`;
+    renderHome();
+  }
+
+  function enterFolder(folderId) {
+    activeFolderId = folderId;
+    renderHome();
+  }
+
+  function exitFolder() {
+    activeFolderId = null;
+    renderHome();
+  }
+
+  // ================= 휴지통 =================
+  function openTrashView() {
+    document.getElementById('home-view').classList.add('hidden');
+    document.getElementById('trash-view').classList.remove('hidden');
+    renderTrashList();
+  }
+
+  function closeTrashView() {
+    document.getElementById('trash-view').classList.add('hidden');
+    document.getElementById('home-view').classList.remove('hidden');
+    renderHome();
+  }
+
+  function renderTrashList() {
+    const listEl = document.getElementById('trash-list');
+    if (trashedNotes.length === 0) {
+      listEl.innerHTML = `<div class="text-center text-xs text-gray-400 py-20">휴지통이 비어 있습니다.</div>`;
+      return;
+    }
+    listEl.innerHTML = trashedNotes.map(note => {
+      const theme = getContrastTheme(note.bgColor, '#FFFFFF');
+      return `
+        <div style="background-color:${note.bgColor}; border-color:${theme.borderColor};" class="p-4 rounded-2xl border shadow-sm flex justify-between items-center gap-3">
+          <div class="min-w-0">
+            <div style="color:${theme.titleColor};" class="text-sm font-bold truncate">${note.title || '제목 없음'}</div>
+            <div style="color:${theme.subColor};" class="text-[11px] mt-0.5">항목 ${note.blocks.length}개 · 삭제됨</div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="restoreNoteFromTrash('${note.id}')" class="px-3 py-1.5 rounded-xl bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-xs font-bold active:scale-95">
+              복원
+            </button>
+            <button onclick="permanentlyDeleteNote('${note.id}')" class="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold active:scale-95">
+              영구삭제
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function restoreNoteFromTrash(noteId) {
+    const idx = trashedNotes.findIndex(n => n.id === noteId);
+    if (idx === -1) return;
+    const [restored] = trashedNotes.splice(idx, 1);
+    if (restored.parentId && !notes.some(n => n.id === restored.parentId)) {
+      restored.parentId = null;
+    }
+    notes.unshift(restored);
+    saveStateToDB();
+    renderTrashList();
+  }
+
+  function permanentlyDeleteNote(noteId) {
+    trashedNotes = trashedNotes.filter(n => n.id !== noteId);
+    saveStateToDB();
+    renderTrashList();
+  }
+
+  function emptyAllTrash() {
+    trashedNotes = [];
+    saveStateToDB();
+    renderTrashList();
+  }
+
+  // ================= 미니 드롭다운 메뉴 (항상 버튼 아래쪽으로 열림) =================
+  function openCardPopover(e, noteId) {
+    actionTargetNoteId = noteId;
+    const btnRect = e.currentTarget.getBoundingClientRect();
+    const backdrop = document.getElementById('card-popover-backdrop');
+    const pop = document.getElementById('card-mini-popover');
+
+    backdrop.classList.remove('hidden');
+
+    const popW = 120;
+    let left = btnRect.right - popW;
+    if (left < 12) left = 12;
+    if (left + popW > window.innerWidth - 12) left = window.innerWidth - popW - 12;
+
+    const top = btnRect.bottom + 4;
+
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+  }
+
+  function closeCardPopover() {
+    document.getElementById('card-popover-backdrop').classList.add('hidden');
+  }
+
+  function duplicateTargetNote() {
+    const origin = notes.find(n => n.id === actionTargetNoteId);
+    if (!origin) return;
+    const copyNote = {
+      id: 'n' + Date.now(),
+      title: `${origin.title || '노트'} (복사본)`,
+      parentId: origin.parentId,
+      bgColor: origin.bgColor,
+      paper: origin.paper,
+      blocks: origin.blocks.map((b, i) => ({
+        ...b,
+        id: 'b' + Date.now() + '_' + i,
+        photos: [...(b.photos || [])]
+      }))
+    };
+    notes.unshift(copyNote);
+    saveStateToDB();
+    closeCardPopover();
+    renderHome();
+  }
+
+  function moveTargetNoteToTrash() {
+    if (!actionTargetNoteId) return;
+    const toTrash = notes.filter(n => n.id === actionTargetNoteId || n.parentId === actionTargetNoteId);
+    trashedNotes.unshift(...toTrash);
+    notes = notes.filter(n => n.id !== actionTargetNoteId && n.parentId !== actionTargetNoteId);
+    recentTabIds = recentTabIds.filter(id => id !== actionTargetNoteId);
+    if (activeFolderId === actionTargetNoteId) activeFolderId = null;
+    saveStateToDB();
+    closeCardPopover();
+    renderHome();
+  }
+
+  function exportNoteAsJPG() {
+    const note = notes.find(n => n.id === actionTargetNoteId);
+    if (!note) return;
+    const theme = getContrastTheme(note.bgColor, '#FFFFFF');
+
+    const canvas = document.createElement('canvas');
+    const width = 720;
+    const height = Math.max(520, 200 + note.blocks.length * 70);
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = note.bgColor || '#FEF9C3';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = theme.titleColor;
+    ctx.font = 'bold 34px sans-serif';
+    ctx.fillText(note.title || '포스트잇 노트', 48, 76);
+
+    ctx.strokeStyle = theme.borderColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(48, 108);
+    ctx.lineTo(width - 48, 108);
+    ctx.stroke();
+
+    note.blocks.forEach((b, idx) => {
+      const y = 160 + idx * 65;
+      if (b.type === 'plain-text') {
+        ctx.fillStyle = theme.titleColor;
+        ctx.font = '22px sans-serif';
+        ctx.fillText(b.memo || b.title || '', 48, y);
+        return;
+      }
+      ctx.strokeStyle = theme.checkBorder;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(48, y - 22, 26, 26);
+      if (b.done) {
+        ctx.fillStyle = theme.checkDoneBg;
+        ctx.fillRect(48, y - 22, 26, 26);
+        ctx.fillStyle = theme.checkDoneText;
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('✓', 54, y - 2);
+      }
+      ctx.fillStyle = b.done ? theme.mutedColor : theme.titleColor;
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(b.title || '(내용 없음)', 92, y);
+    });
+
+    const link = document.createElement('a');
+    link.download = `${note.title || 'postit-note'}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+    closeCardPopover();
+  }
+
+  function exportNoteAsPDF() {
+    const note = notes.find(n => n.id === actionTargetNoteId);
+    if (!note) return;
+    const theme = getContrastTheme(note.bgColor, '#FFFFFF');
+    closeCardPopover();
+
+    const printArea = document.getElementById('print-area');
+    printArea.classList.remove('hidden');
+    printArea.innerHTML = `
+      <div style="background:${note.bgColor}; color:${theme.titleColor}; padding:24px; border-radius:16px; border:1px solid #ddd;">
+        <h1 style="font-size:24px; font-weight:bold; margin-bottom:16px;">${note.title || '포스트잇 노트'}</h1>
+        ${note.blocks.map(b => `
+          <div style="padding:10px 0; border-bottom:1px solid ${theme.borderColor}; font-size:15px;">
+            ${b.type === 'plain-text'
+              ? `<div>${b.memo || b.title || ''}</div>`
+              : `<strong>${b.done ? '[완료]' : '[미완료]'} ${b.title || ''}</strong>
+                 ${b.memo ? `<div style="color:${theme.subColor}; font-size:13px; margin-top:4px;">${b.memo}</div>` : ''}`
+            }
+          </div>
+        `).join('')}
+      </div>
+    `;
+    setTimeout(() => {
+      window.print();
+      printArea.classList.add('hidden');
+    }, 150);
+  }
+
+  // ================= 에디터 렌더링 & 전체 체크 사각형 & 점3개 드로어 =================
+  function openNote(noteId) {
+    const target = notes.find(n => n.id === noteId);
+    if (!target) return;
+    currentNoteId = noteId;
+
+    const rootId = target.parentId ? target.parentId : target.id;
+    if (!recentTabIds.includes(rootId)) {
+      recentTabIds.push(rootId);
+      if (recentTabIds.length > 5) recentTabIds.shift();
+    }
+
+    document.getElementById('home-view').classList.add('hidden');
+    document.getElementById('editor-view').classList.remove('hidden');
+    renderEditor();
+  }
+
+  function goHome() {
+    document.getElementById('editor-view').classList.add('hidden');
+    document.getElementById('home-view').classList.remove('hidden');
+    renderHome();
+  }
+
+  function toggleAllChecklists() {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only');
+    if (checkable.length === 0) return;
+
+    const allChecked = checkable.every(b => b.done);
+    const nextState = !allChecked;
+    checkable.forEach(b => {
+      b.done = nextState;
+      if (b.type === 'split-slim') b.done2 = nextState;
+    });
+    saveStateToDB();
+    renderEditor();
+  }
+
+  function setCompletedSortMode(mode) {
+    completedSortMode = mode;
+    renderDrawerControls();
+    renderEditor();
+  }
+
+  function openEditorDrawer() {
+    const backdrop = document.getElementById('editor-drawer-backdrop');
+    const panel = document.getElementById('editor-drawer-panel');
+    backdrop.classList.remove('hidden');
+    renderDrawerControls();
+    requestAnimationFrame(() => panel.classList.add('open'));
+  }
+
+  function closeEditorDrawer(e) {
+    if (!e || e.target.id === 'editor-drawer-backdrop') {
+      const backdrop = document.getElementById('editor-drawer-backdrop');
+      const panel = document.getElementById('editor-drawer-panel');
+      panel.classList.remove('open');
+      setTimeout(() => backdrop.classList.add('hidden'), 220);
+    }
+  }
+
+  function setCurrentNoteBgColor(hex) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    note.bgColor = hex;
+    saveStateToDB();
+    renderDrawerControls();
+    renderEditor();
+  }
+
+  function setCurrentNotePaper(paperId) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    note.paper = paperId;
+    saveStateToDB();
+    renderDrawerControls();
+    renderEditor();
+  }
+
+  function setAllBlocksCardBg(bgVal) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    note.blocks.forEach(b => { b.cardBg = bgVal; });
+    saveStateToDB();
+    renderDrawerControls();
+    renderEditor();
+  }
+
+  function applyLayoutToCurrentNote(type, pageIdx) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    carouselPages.drawer = pageIdx;
+    note.blocks.forEach(b => {
+      b.type = type;
+      if (type === 'split-slim' && typeof b.title2 === 'undefined') {
+        b.title2 = '';
+        b.done2 = false;
+      }
+    });
+    saveStateToDB();
+    renderDrawerControls();
+    renderEditor();
+  }
+
+  function renderDrawerControls() {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+
+    const btnBottom = document.getElementById('drawer-sort-bottom');
+    const btnStay = document.getElementById('drawer-sort-stay');
+    btnBottom.className = completedSortMode === 'bottom'
+      ? 'py-2 rounded-lg text-xs font-bold bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 shadow-sm'
+      : 'py-2 rounded-lg text-xs font-bold text-gray-500';
+    btnStay.className = completedSortMode === 'stay'
+      ? 'py-2 rounded-lg text-xs font-bold bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 shadow-sm'
+      : 'py-2 rounded-lg text-xs font-bold text-gray-500';
+
+    document.getElementById('drawer-bg-colors').innerHTML =
+      renderColorSwatchesHTML(baseBgColors, note.bgColor, 'setCurrentNoteBgColor', 'drawer-bg');
+
+    document.getElementById('drawer-papers').innerHTML = PAPERS.map(p => `
+      <button onclick="setCurrentNotePaper('${p.id}')"
+        class="py-1.5 rounded-lg text-[11px] font-bold border ${
+          note.paper === p.id ? 'border-purple-400 bg-[#EDE9FE] text-purple-950' : 'border-gray-200 bg-gray-50 text-gray-700'
+        }">
+        ${p.label}
+      </button>
+    `).join('');
+
+    const currentCardBg = note.blocks.length > 0 ? note.blocks[0].cardBg : 'rgba(255,255,255,0.95)';
+    document.getElementById('drawer-block-colors').innerHTML =
+      renderColorSwatchesHTML(baseBlockColors, currentCardBg, 'setAllBlocksCardBg', 'drawer-block');
+
+    const currentLayout = note.blocks.length > 0 ? note.blocks[0].type : 'left-photo';
+    renderPagedLayoutCarousel('drawer', currentLayout, 'applyLayoutToCurrentNote');
+  }
+
+  function renderEditor() {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const noteTheme = getContrastTheme(note.bgColor, '#FFFFFF');
+
+    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only');
+    const allChecked = checkable.length > 0 && checkable.every(b => b.done);
+    const allCheckSquare = document.getElementById('all-check-square');
+    allCheckSquare.style.borderColor = noteTheme.checkBorder;
+    allCheckSquare.style.backgroundColor = allChecked ? noteTheme.checkDoneBg : 'transparent';
+    allCheckSquare.style.color = noteTheme.checkDoneText;
+    allCheckSquare.textContent = allChecked ? '✓' : '';
+
+    document.getElementById('editor-more-btn').style.color = noteTheme.titleColor;
+
+    const activeRootId = note.parentId ? note.parentId : note.id;
+    const tabsBar = document.getElementById('recent-tabs-bar');
+    const tabsHTML = recentTabIds.map(id => {
+      const tNote = notes.find(n => n.id === id);
+      if (!tNote) return '';
+      const isActive = id === activeRootId;
+      return `
+        <button onclick="openNote('${id}')"
+          class="px-3 py-1.5 rounded-t-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+            isActive ? 'bg-white text-gray-900 shadow-sm' : 'bg-gray-200/70 text-gray-500'
+          }">
+          <span class="w-2 h-2 rounded-full border border-black/20" style="background:${tNote.bgColor}"></span>
+          <span class="max-w-[95px] truncate">${tNote.title || '무제'}</span>
+        </button>
+      `;
+    }).join('');
+
+    tabsBar.innerHTML = tabsHTML + `
+      <button onclick="openCreateSheet()" title="새 노트 추가"
+        class="px-2.5 py-1.5 rounded-t-xl text-sm font-bold text-gray-700 bg-gray-200/80 hover:bg-gray-300 shrink-0">
+        +
+      </button>
+    `;
+
+    const groupRootId = note.parentId ? note.parentId : note.id;
+    const rootNote = notes.find(n => n.id === groupRootId);
+    const siblings = notes.filter(n => n.parentId === groupRootId);
+    const chipsBar = document.getElementById('linked-chips-bar');
+
+    if (siblings.length > 0) {
+      chipsBar.classList.remove('hidden');
+      const groupAll = [rootNote, ...siblings];
+      chipsBar.innerHTML = groupAll.map((item, idx) => {
+        const isCurrent = item.id === note.id;
+        return `
+          <button onclick="openNote('${item.id}')"
+            class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${
+              isCurrent ? 'bg-[#EDE9FE] border border-purple-300 text-purple-950' : 'bg-white border border-gray-200 text-gray-600'
+            }">
+            ${idx === 0 ? '메인' : idx + '.'} ${item.title}
+          </button>
+        `;
+      }).join('');
+    } else {
+      chipsBar.classList.add('hidden');
+    }
+
+    const canvas = document.getElementById('editor-canvas');
+    canvas.style.backgroundColor = note.bgColor;
+    canvas.style.setProperty('--line-color', noteTheme.lineColor);
+    canvas.style.setProperty('--dot-color', noteTheme.dotColor);
+    canvas.className = `flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar paper-${note.paper} flex flex-col`;
+
+    const topbar = document.getElementById('editor-topbar');
+    topbar.style.backgroundColor = note.bgColor;
+    topbar.style.borderColor = noteTheme.borderColor;
+
+    const homeBtn = document.getElementById('editor-home-btn');
+    homeBtn.style.color = noteTheme.titleColor;
+
+    const titleInput = document.getElementById('editor-title-input');
+    titleInput.value = note.title;
+    titleInput.style.color = noteTheme.titleColor;
+
+    let displayBlocks = [...note.blocks];
+    if (completedSortMode === 'bottom') {
+      displayBlocks.sort((a, b) => Number(a.done) - Number(b.done));
+    }
+
+    document.getElementById('blocks-container').innerHTML = displayBlocks.map(block => renderBlockHTML(block, false, note.bgColor)).join('');
+
+    // 순수 텍스트 라인 높이 자동 스냅
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.direct-sheet-line').forEach(autoResizeSheetLine);
+    });
+
+    const lastType = note.blocks.length > 0 ? note.blocks[note.blocks.length - 1].type : draftLayout;
+    document.getElementById('quick-add-same-btn').textContent = `틀 추가 (${getLayoutLabel(lastType)})`;
+  }
+
+  function renderBlockHTML(b, isPreview, parentBgColor) {
+    const bgStyle = b.cardBg || 'rgba(255,255,255,0.95)';
+    const isTransparent = bgStyle === 'transparent';
+    const theme = getContrastTheme(bgStyle, parentBgColor);
+
+    const dragHandle = isPreview ? '' : `
+      <div onpointerdown="startImmediateDrag(event, '${b.id}')" style="color:${theme.subColor};" class="drag-handle" title="위아래로 드래그하여 순서 변경">
+        <svg width="14" height="18" viewBox="0 0 14 18" fill="currentColor">
+          <circle cx="4" cy="3" r="1.4"/><circle cx="10" cy="3" r="1.4"/>
+          <circle cx="4" cy="9" r="1.4"/><circle cx="10" cy="9" r="1.4"/>
+          <circle cx="4" cy="15" r="1.4"/><circle cx="10" cy="15" r="1.4"/>
+        </svg>
+      </div>
+    `;
+
+    const checkBtn = `
+      <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
+        style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+        class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-1.5">
+        ${b.done ? '✓' : ''}
+      </button>
+    `;
+
+    const deleteBtn = isPreview ? '' : `
+      <button onclick="deleteBlock('${b.id}')" title="항목 삭제"
+        style="color:${theme.subColor};"
+        class="w-6 h-6 rounded-lg hover:text-red-500 text-xs font-bold flex items-center justify-center shrink-0 mt-1">
+        ✕
+      </button>
+    `;
+
+    const photoThumb = (photos) => {
+      if (!photos || photos.length === 0) {
+        return `<button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
+          style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
+          class="w-16 h-16 rounded-xl border border-dashed flex flex-col items-center justify-center text-[10px] shrink-0">+ 사진</button>`;
+      }
+      return `
+        <div class="relative w-16 h-16 shrink-0 cursor-pointer" onclick="${isPreview ? '' : `openLightbox('${b.id}', 0)`}">
+          <img src="${photos[0]}" onerror="this.style.display='none'" class="w-full h-full object-cover rounded-xl border border-black/10" />
+          ${photos.length > 1 ? `<span class="absolute bottom-1 right-1 bg-black/75 text-white text-[10px] font-bold px-1.5 rounded-md">+${photos.length - 1}</span>` : ''}
+          <button onclick="event.stopPropagation(); ${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 text-white rounded-full text-[11px] flex items-center justify-center shadow">+</button>
+        </div>
+      `;
+    };
+
+    const longPressAttr = isPreview ? '' : `onpointerdown="handleCardLongPressDrag(event, '${b.id}')"`;
+    const cardClass = `block-item rounded-2xl px-3 py-2 border transition-transform ${
+      isTransparent ? 'shadow-none' : 'shadow-sm'
+    }`;
+
+    // 7번: 테두리 박스 없이 속지 칸(32px)에 바로 맞춰지는 순수 텍스트 라인
+    if (b.type === 'plain-text') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr}
+          class="block-item flex items-start gap-1 py-0.5 transition-transform">
+          ${dragHandle}
+          <textarea rows="1" placeholder="칸에 맞춰 바로 글을 쓰세요..."
+            oninput="updateBlockField('${b.id}','memo',this.value); autoResizeSheetLine(this)"
+            style="color:${theme.titleColor};"
+            class="direct-sheet-line flex-1">${b.memo || ''}</textarea>
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    // 4번(추가): '사진만' 틀 (글씨 칸 없이 사진만 깔끔하게 나열)
+    if (b.type === 'photo-only') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-center gap-2">
+          ${dragHandle}
+          <div class="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+            ${(b.photos || []).map((src, idx) => `
+              <img src="${src}" onerror="this.style.display='none'" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}" class="w-24 h-24 rounded-xl object-cover border border-black/10 shrink-0 cursor-pointer" />
+            `).join('')}
+            <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
+              style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
+              class="w-24 h-24 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
+              + 사진 추가
+            </button>
+          </div>
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    // 4번(추가): '2분할 슬림바' (한 줄에 체크리스트 2개가 나란히 배치)
+    if (b.type === 'split-slim') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
+          class="block-item rounded-xl px-2.5 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-center gap-1.5 transition-transform">
+          ${dragHandle}
+          <!-- 좌측 항목 -->
+          <div class="flex-1 min-w-0 flex items-center gap-1.5">
+            <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
+              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
+              ${b.done ? '✓' : ''}
+            </button>
+            <input type="text" value="${b.title || ''}" placeholder="항목 1" oninput="updateBlockField('${b.id}','title',this.value)"
+              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+              class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+          </div>
+          <div style="background:${theme.borderColor};" class="w-[1px] h-5 shrink-0 mx-0.5"></div>
+          <!-- 우측 항목 -->
+          <div class="flex-1 min-w-0 flex items-center gap-1.5">
+            <button onclick="${isPreview ? '' : `toggleBlockSecondDone('${b.id}')`}"
+              style="border-color:${theme.checkBorder}; background:${b.done2 ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
+              ${b.done2 ? '✓' : ''}
+            </button>
+            <input type="text" value="${b.title2 || ''}" placeholder="항목 2" oninput="updateBlockField('${b.id}','title2',this.value)"
+              style="color:${b.done2 ? theme.mutedColor : theme.titleColor};"
+              class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done2 ? 'line-through' : ''}" />
+          </div>
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    if (b.type === 'left-photo') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-start gap-2">
+          ${dragHandle}
+          ${checkBtn}
+          ${photoThumb(b.photos)}
+          <div class="flex-1 min-w-0">
+            <input type="text" value="${b.title}" placeholder="할 일 제목" oninput="updateBlockField('${b.id}','title',this.value)"
+              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+            <input type="text" value="${b.memo}" placeholder="세부 메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
+              style="color:${theme.subColor};"
+              class="w-full text-xs leading-8 bg-transparent outline-none" />
+          </div>
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    if (b.type === 'right-photo') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-start gap-2">
+          ${dragHandle}
+          ${checkBtn}
+          <div class="flex-1 min-w-0">
+            <input type="text" value="${b.title}" placeholder="할 일 제목" oninput="updateBlockField('${b.id}','title',this.value)"
+              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+            <input type="text" value="${b.memo}" placeholder="세부 메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
+              style="color:${theme.subColor};"
+              class="w-full text-xs leading-8 bg-transparent outline-none" />
+          </div>
+          ${photoThumb(b.photos)}
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    if (b.type === 'top-photo') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass}">
+          <div class="flex items-start gap-2 mb-1.5">
+            ${dragHandle}
+            ${checkBtn}
+            <div class="flex-1 min-w-0">
+              <input type="text" value="${b.title}" placeholder="제목" oninput="updateBlockField('${b.id}','title',this.value)"
+                style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+              <input type="text" value="${b.memo}" placeholder="메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
+                style="color:${theme.subColor};"
+                class="w-full text-xs leading-8 bg-transparent outline-none" />
+            </div>
+            ${deleteBtn}
+          </div>
+          <div class="flex gap-2 overflow-x-auto no-scrollbar pt-1 pl-6">
+            ${(b.photos || []).map((src, idx) => `
+              <img src="${src}" onerror="this.style.display='none'" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}" class="w-20 h-20 rounded-xl object-cover border border-black/10 shrink-0 cursor-pointer" />
+            `).join('')}
+            <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
+              style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
+              class="w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
+              + 사진 추가
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    if (b.type === 'memo') {
+      return `
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-start gap-2">
+          ${dragHandle}
+          ${checkBtn}
+          <div class="flex-1 min-w-0">
+            <input type="text" value="${b.title}" placeholder="주제 제목" oninput="updateBlockField('${b.id}','title',this.value)"
+              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+            <textarea rows="2" placeholder="메모 내용을 자유롭게 적으세요..." oninput="updateBlockField('${b.id}','memo',this.value)"
+              style="color:${theme.subColor};"
+              class="w-full text-xs leading-8 bg-transparent outline-none resize-none">${b.memo}</textarea>
+          </div>
+          ${deleteBtn}
+        </div>
+      `;
+    }
+
+    return `
+      <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
+        class="block-item rounded-xl px-3 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-center gap-2 transition-transform">
+        ${dragHandle}
+        <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
+          style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+          class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0">
+          ${b.done ? '✓' : ''}
+        </button>
+        <input type="text" value="${b.title}" placeholder="간단 체크 항목..." oninput="updateBlockField('${b.id}','title',this.value)"
+          style="color:${b.done ? theme.mutedColor : theme.titleColor};"
+          class="flex-1 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+        ${deleteBtn}
+      </div>
+    `;
+  }
+
+  function toggleBlockSecondDone(blockId) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (block) {
+      block.done2 = !block.done2;
+      saveStateToDB();
+      renderEditor();
+    }
+  }
+
+  // ================= 에디터 내 블록 드래그 순서 변경 =================
+  function startImmediateDrag(e, blockId) {
+    e.stopPropagation();
+    const cardEl = e.currentTarget.closest('.block-item');
+    if (!cardEl) return;
+    activateDrag(e, blockId, cardEl);
+  }
+
+  function handleCardLongPressDrag(e, blockId) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'IMG') {
+      return;
+    }
+    const cardEl = e.currentTarget;
+    dragInfo.startX = e.clientX;
+    dragInfo.startY = e.clientY;
+    dragInfo.blockId = blockId;
+    dragInfo.el = cardEl;
+    dragInfo.active = false;
+
+    clearTimeout(dragInfo.timer);
+    dragInfo.timer = setTimeout(() => {
+      activateDrag(e, blockId, cardEl);
+    }, 300);
+  }
+
+  function activateDrag(e, blockId, cardEl) {
+    dragInfo.active = true;
+    dragInfo.blockId = blockId;
+    dragInfo.el = cardEl;
+    dragInfo.pointerId = e.pointerId;
+    cardEl.classList.add('block-dragging');
+    try {
+      cardEl.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    if (navigator.vibrate) navigator.vibrate(25);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (!dragInfo.blockId || !dragInfo.el) return;
+
+    if (!dragInfo.active) {
+      const dist = Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY);
+      if (dist > 14) {
+        clearTimeout(dragInfo.timer);
+        dragInfo.blockId = null;
+        dragInfo.el = null;
+      }
+      return;
+    }
+
+    e.preventDefault();
+    const container = document.getElementById('blocks-container');
+    const items = Array.from(container.children);
+    const draggingEl = dragInfo.el;
+    const pointerY = e.clientY;
+
+    for (const item of items) {
+      if (item === draggingEl) continue;
+      const rect = item.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+
+      const draggingIndex = items.indexOf(draggingEl);
+      const targetIndex = items.indexOf(item);
+
+      if (draggingIndex < targetIndex && pointerY > midY) {
+        container.insertBefore(draggingEl, item.nextSibling);
+        break;
+      } else if (draggingIndex > targetIndex && pointerY < midY) {
+        container.insertBefore(draggingEl, item);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  function endBlockDrag() {
+    clearTimeout(dragInfo.timer);
+    if (dragInfo.active && dragInfo.el) {
+      dragInfo.el.classList.remove('block-dragging');
+      try {
+        if (dragInfo.pointerId !== null) dragInfo.el.releasePointerCapture(dragInfo.pointerId);
+      } catch (_) {}
+
+      const container = document.getElementById('blocks-container');
+      const orderedIds = Array.from(container.children).map(el => el.getAttribute('data-block-id'));
+      const note = notes.find(n => n.id === currentNoteId);
+      if (note && orderedIds.length > 0) {
+        const reordered = [];
+        orderedIds.forEach(id => {
+          const found = note.blocks.find(b => b.id === id);
+          if (found) reordered.push(found);
+        });
+        if (completedSortMode === 'bottom') {
+          completedSortMode = 'stay';
+        }
+        note.blocks = reordered;
+        saveStateToDB();
+        renderEditor();
+      }
+    }
+    dragInfo.active = false;
+    dragInfo.blockId = null;
+    dragInfo.el = null;
+    dragInfo.pointerId = null;
+  }
+
+  document.addEventListener('pointerup', endBlockDrag);
+  document.addEventListener('pointercancel', endBlockDrag);
+
+  // ================= 블록 삭제 & 실행취소 =================
+  function deleteBlock(blockId) {
+    if (!blockId) return;
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const idx = note.blocks.findIndex(b => b.id === blockId);
+    if (idx === -1) return;
+
+    const [removed] = note.blocks.splice(idx, 1);
+    lastDeletedBlockInfo = { noteId: note.id, index: idx, block: removed };
+    saveStateToDB();
+    renderEditor();
+
+    const toast = document.getElementById('undo-toast');
+    toast.classList.remove('hidden');
+    clearTimeout(undoToastTimer);
+    undoToastTimer = setTimeout(() => {
+      toast.classList.add('hidden');
+      lastDeletedBlockInfo = null;
+    }, 4000);
+  }
+
+  function undoDeleteBlock() {
+    if (!lastDeletedBlockInfo) return;
+    const note = notes.find(n => n.id === lastDeletedBlockInfo.noteId);
+    if (note) {
+      note.blocks.splice(lastDeletedBlockInfo.index, 0, lastDeletedBlockInfo.block);
+      saveStateToDB();
+      renderEditor();
+    }
+    lastDeletedBlockInfo = null;
+    document.getElementById('undo-toast').classList.add('hidden');
+  }
+
+  function updateCurrentTitle(val) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note) {
+      note.title = val;
+      saveStateToDB();
+    }
+  }
+
+  function toggleBlockDone(blockId) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (block) {
+      block.done = !block.done;
+      saveStateToDB();
+      renderEditor();
+    }
+  }
+
+  function updateBlockField(blockId, field, val) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (block) {
+      block[field] = val;
+      saveStateToDB();
+    }
+  }
+
+  // ================= 색 선택 칩 렌더링 (연보라색 강조) =================
+  function renderColorSwatchesHTML(colors, selectedVal, onSelectExpr, pickerTarget) {
+    const swatches = colors.map(c => {
+      const isTrans = c === 'transparent';
+      const isSelected = selectedVal === c;
+      if (isTrans) {
+        return `
+          <button type="button" onclick="${onSelectExpr}('transparent')"
+            class="px-2.5 h-8 rounded-full border border-dashed text-[11px] font-bold flex items-center justify-center transition ${
+              isSelected ? 'border-purple-400 bg-[#EDE9FE] text-purple-950' : 'border-gray-300 bg-gray-50 text-gray-700'
+            }">
+            투명
+          </button>
+        `;
+      }
+      return `
+        <button type="button" onclick="${onSelectExpr}('${c}')"
+          style="background-color:${c}"
+          class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-purple-400 scale-110 ring-2 ring-[#DDD6FE]' : 'border-gray-200'} transition"></button>
+      `;
+    }).join('');
+
+    const initHex = selectedVal && selectedVal.startsWith('#') ? selectedVal : '#FFFFFF';
+    return swatches + `
+      <button type="button" onclick="openCustomColorModal('${pickerTarget}', '${initHex}')" title="커스텀 색상 선택"
+        class="w-8 h-8 rounded-full border-2 border-dashed border-purple-300 bg-[#F5F3FF] text-purple-900 font-bold text-sm flex items-center justify-center active:scale-95">
+        +
+      </button>
+    `;
+  }
+
+  // ================= 새 노트 바텀시트 =================
+  function openCreateSheet() {
+    document.getElementById('create-sheet-backdrop').classList.remove('hidden');
+    renderCreateSheetControls();
+  }
+
+  function closeCreateSheet(e) {
+    if (!e || e.target.id === 'create-sheet-backdrop') {
+      document.getElementById('create-sheet-backdrop').classList.add('hidden');
+    }
+  }
+
+  function setSheetBgColor(c) {
+    draftColor = c;
+    renderCreateSheetControls();
+  }
+
+  function setSheetBlockColor(c) {
+    draftBlockColor = c;
+    renderCreateSheetControls();
+  }
+
+  function selectSheetLayout(type, pageIdx) {
+    draftLayout = type;
+    carouselPages.sheet = pageIdx;
+    renderCreateSheetControls();
+  }
+
+  function renderCreateSheetControls() {
+    document.getElementById('sheet-bg-color-picker').innerHTML =
+      renderColorSwatchesHTML(baseBgColors, draftColor, 'setSheetBgColor', 'sheet-bg');
+
+    document.getElementById('sheet-block-color-picker').innerHTML =
+      renderColorSwatchesHTML(baseBlockColors, draftBlockColor, 'setSheetBlockColor', 'sheet-block');
+
+    document.getElementById('paper-picker').innerHTML = PAPERS.map(p => `
+      <button type="button" onclick="draftPaper='${p.id}'; renderCreateSheetControls()"
+        class="py-2 rounded-xl text-xs font-bold border ${draftPaper === p.id ? 'border-purple-400 bg-[#EDE9FE] text-purple-950' : 'border-gray-200 bg-gray-50 text-gray-700'}">
+        ${p.label}
+      </button>
+    `).join('');
+
+    renderPagedLayoutCarousel('sheet', draftLayout, 'selectSheetLayout');
+
+    const previewTheme = getContrastTheme(draftColor, '#FFFFFF');
+    const previewBox = document.getElementById('preview-box');
+    previewBox.style.backgroundColor = draftColor;
+    previewBox.style.setProperty('--line-color', previewTheme.lineColor);
+    previewBox.style.setProperty('--dot-color', previewTheme.dotColor);
+    previewBox.className = `px-4 py-3 rounded-2xl border border-black/10 shadow-inner transition-all paper-${draftPaper}`;
+    document.getElementById('preview-title-text').style.color = previewTheme.titleColor;
+
+    const sampleBlock = {
+      id: 'preview',
+      type: draftLayout,
+      done: false,
+      done2: false,
+      title: '미리보기 항목 1',
+      title2: '미리보기 항목 2',
+      memo: '배경 밝기에 맞춰 글자색이 자동 조정됩니다',
+      cardBg: draftBlockColor,
+      photos: []
+    };
+    document.getElementById('preview-block-render').innerHTML = renderBlockHTML(sampleBlock, true, draftColor);
+  }
+
+  function confirmCreateNote() {
+    const newId = 'n' + Date.now();
+    notes.unshift({
+      id: newId,
+      title: '새 포스트잇 노트',
+      parentId: activeFolderId || null,
+      bgColor: draftColor,
+      paper: draftPaper,
+      blocks: [
+        {
+          id: 'b' + Date.now(),
+          type: draftLayout,
+          done: false,
+          done2: false,
+          title: '',
+          title2: '',
+          memo: '',
+          cardBg: draftLayout === 'plain-text' ? 'transparent' : draftBlockColor,
+          photos: []
+        }
+      ]
+    });
+    saveStateToDB();
+    closeCreateSheet();
+    openNote(newId);
+  }
+
+  // ================= 에디터 내 새 틀 추가 모달 =================
+  function addSameAsLastBlock() {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const lastBlock = note.blocks.length > 0 ? note.blocks[note.blocks.length - 1] : null;
+    const lastType = lastBlock ? lastBlock.type : draftLayout;
+    const lastBg = lastBlock ? lastBlock.cardBg : draftBlockColor;
+    addBlockWithType(lastType, 0, lastBg);
+  }
+
+  function openAddBlockModal() {
+    const note = notes.find(n => n.id === currentNoteId);
+    const lastBlock = note && note.blocks.length > 0 ? note.blocks[note.blocks.length - 1] : null;
+    modalNewBlockColor = lastBlock && lastBlock.cardBg !== 'transparent' ? lastBlock.cardBg : 'rgba(255,255,255,0.95)';
+    document.getElementById('add-block-modal').classList.remove('hidden');
+    renderModalLayouts();
+  }
+
+  function closeAddBlockModal(e) {
+    if (!e || e.target.id === 'add-block-modal') {
+      document.getElementById('add-block-modal').classList.add('hidden');
+    }
+  }
+
+  function setModalBlockColor(c) {
+    modalNewBlockColor = c;
+    renderModalLayouts();
+  }
+
+  function renderModalLayouts() {
+    document.getElementById('modal-block-color-picker').innerHTML =
+      renderColorSwatchesHTML(baseBlockColors, modalNewBlockColor, 'setModalBlockColor', 'modal-block');
+
+    renderPagedLayoutCarousel('modal', '', 'addBlockFromModalCarousel');
+  }
+
+  function addBlockFromModalCarousel(type, pageIdx) {
+    carouselPages.modal = pageIdx;
+    addBlockWithType(type, pageIdx, modalNewBlockColor);
+  }
+
+  function addBlockWithType(type, pageIdx, cardBg = 'rgba(255,255,255,0.95)') {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    note.blocks.push({
+      id: 'b' + Date.now(),
+      type,
+      done: false,
+      done2: false,
+      title: '',
+      title2: '',
+      memo: '',
+      cardBg: type === 'plain-text' ? 'transparent' : cardBg,
+      photos: []
+    });
+    saveStateToDB();
+    closeAddBlockModal();
+    renderEditor();
+  }
+
+  // ================= 기존 파일 선택형 연결 모달 =================
+  function openLinkModalForFolder() {
+    if (!activeFolderId) return;
+    linkingRootId = activeFolderId;
+    renderLinkModalList();
+  }
+
+  function openLinkModal() {
+    const current = notes.find(n => n.id === currentNoteId);
+    if (!current) return;
+    linkingRootId = current.parentId ? current.parentId : current.id;
+    renderLinkModalList();
+  }
+
+  function renderLinkModalList() {
+    const candidates = notes.filter(n => n.id !== linkingRootId);
+
+    document.getElementById('linkable-files-list').innerHTML = candidates.map(c => {
+      const isLinked = c.parentId === linkingRootId;
+      return `
+        <div onclick="toggleFileLink('${c.id}')"
+          class="p-3.5 rounded-xl border flex justify-between items-center cursor-pointer ${
+            isLinked ? 'border-purple-400 bg-[#EDE9FE]' : 'border-gray-200'
+          }">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded-full border border-black/20" style="background:${c.bgColor}"></span>
+            <span class="text-xs font-bold text-gray-800">${c.title}</span>
+          </div>
+          <span class="w-5 h-5 rounded-md border flex items-center justify-center text-xs ${
+            isLinked ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-300'
+          }">${isLinked ? '✓' : ''}</span>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('link-file-modal').classList.remove('hidden');
+  }
+
+  function toggleFileLink(targetId) {
+    const target = notes.find(n => n.id === targetId);
+    if (!target || !linkingRootId) return;
+    target.parentId = target.parentId === linkingRootId ? null : linkingRootId;
+    if (target.parentId) {
+      recentTabIds = recentTabIds.filter(id => id !== target.id);
+    }
+    saveStateToDB();
+    renderLinkModalList();
+    if (!document.getElementById('editor-view').classList.contains('hidden')) {
+      renderEditor();
+    } else {
+      renderHome();
+    }
+  }
+
+  function closeLinkModal(e) {
+    if (!e || e.target.id === 'link-file-modal') {
+      document.getElementById('link-file-modal').classList.add('hidden');
+    }
+  }
+
+  // ================= 갤러리 원본 삭제 후에도 영구 보존되는 사진 첨부 =================
+  function triggerPhotoUpload(blockId) {
+    uploadingBlockId = blockId;
+    document.getElementById('hidden-file-input').click();
+  }
+
+  function compressAndPersistImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1400;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => resolve(ev.target.result);
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageUpload(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length || !uploadingBlockId) return;
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === uploadingBlockId);
+    if (!block) return;
+
+    for (const file of files) {
+      const persistedDataUrl = await compressAndPersistImage(file);
+      block.photos.push(persistedDataUrl);
+    }
+    saveStateToDB();
+    renderEditor();
+    e.target.value = '';
+  }
+
+  function openLightbox(blockId, idx) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (!block || !block.photos.length) return;
+    lightboxBlockId = blockId;
+    lightboxIndex = idx;
+    lightboxZoom = 1;
+    updateLightbox();
+    document.getElementById('lightbox-modal').classList.remove('hidden');
+  }
+
+  function updateLightbox() {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === lightboxBlockId);
+    if (!block || !block.photos.length) {
+      closeLightbox();
+      return;
+    }
+    if (lightboxIndex >= block.photos.length) lightboxIndex = block.photos.length - 1;
+    const imgEl = document.getElementById('lightbox-img');
+    imgEl.src = block.photos[lightboxIndex];
+    imgEl.style.transform = `scale(${lightboxZoom})`;
+    document.getElementById('lightbox-zoom-label').textContent = `${Math.round(lightboxZoom * 100)}%`;
+    document.getElementById('lightbox-counter').textContent = `${lightboxIndex + 1} / ${block.photos.length}`;
+  }
+
+  function changeLightboxZoom(delta) {
+    lightboxZoom = Math.min(3.0, Math.max(0.6, +(lightboxZoom + delta).toFixed(1)));
+    updateLightbox();
+  }
+
+  function resetLightboxZoom() {
+    lightboxZoom = 1;
+    updateLightbox();
+  }
+
+  function toggleDoubleTapZoom() {
+    lightboxZoom = lightboxZoom > 1 ? 1 : 2;
+    updateLightbox();
+  }
+
+  function deleteCurrentLightboxPhoto() {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === lightboxBlockId);
+    if (!block || !block.photos.length) return;
+    block.photos.splice(lightboxIndex, 1);
+    lightboxZoom = 1;
+    saveStateToDB();
+    renderEditor();
+    if (block.photos.length === 0) {
+      closeLightbox();
+    } else {
+      updateLightbox();
+    }
+  }
+
+  function prevLightboxImg() {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === lightboxBlockId);
+    if (!block) return;
+    lightboxIndex = (lightboxIndex - 1 + block.photos.length) % block.photos.length;
+    lightboxZoom = 1;
+    updateLightbox();
+  }
+
+  function nextLightboxImg() {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === lightboxBlockId);
+    if (!block) return;
+    lightboxIndex = (lightboxIndex + 1) % block.photos.length;
+    lightboxZoom = 1;
+    updateLightbox();
+  }
+
+  function closeLightbox() {
+    lightboxZoom = 1;
+    document.getElementById('lightbox-modal').classList.add('hidden');
+  }
+
+  // 앱 실행 시 저장된 데이터 및 개인 공간 복원
+  (async function bootstrapApp() {
+    loadProfilesMeta();
+    await openAppDB();
+    const saved = await loadStateFromDB(currentProfileId);
+    if (saved && Array.isArray(saved.notes)) {
+      notes = saved.notes;
+      trashedNotes = saved.trashedNotes || [];
+      recentTabIds = saved.recentTabIds || [];
+      if (saved.baseBgColors) baseBgColors = saved.baseBgColors;
+      if (saved.baseBlockColors) baseBlockColors = saved.baseBlockColors;
+      if (saved.cpRecentColors) cpRecentColors = saved.cpRecentColors;
+    } else {
+      notes = getInitialGuideNotes();
+      trashedNotes = [];
+      recentTabIds = ['guide_note_1'];
+      saveStateToDB();
+    }
+    renderHome();
+  })();
+</script>
+</body>
+</html>
