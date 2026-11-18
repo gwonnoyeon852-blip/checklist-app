@@ -85,7 +85,7 @@
       transform: translate(32px, -15px) rotate(15deg) !important;
     }
 
-    /* 미니 드롭다운 메뉴 (항상 버튼 아래쪽으로 열림) */
+    /* 미니 드롭다운 메뉴 */
     .mini-popover {
       position: fixed;
       width: 120px;
@@ -123,7 +123,7 @@
       border-top-left-radius: 6px;
     }
 
-    /* 손가락 가로 스와이프 전용 페이지 트랙 (1페이지 = 3개 아이템) */
+    /* 가로 스와이프 페이지 트랙 */
     .paged-carousel-track {
       display: flex;
       width: 100%;
@@ -146,7 +146,7 @@
       padding: 2px;
     }
 
-    /* 7번: 테두리 박스 없이 속지 칸(32px) 정중앙에 딱 맞춰지는 순수 텍스트 라인 */
+    /* 순수 속지 줄글 라인 */
     .direct-sheet-line {
       font-size: 15px;
       line-height: 32px;
@@ -177,7 +177,7 @@
       opacity: 1;
     }
 
-    .block-dragging, .folder-card-dragging {
+    .block-dragging, .home-card-dragging {
       transform: scale(1.04) !important;
       box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24) !important;
       border: 2px solid #8B5CF6 !important;
@@ -270,7 +270,6 @@
         </button>
         <div id="home-title-area" class="flex items-center gap-2 min-w-0">
           <h1 id="home-header-title" class="text-xl font-bold text-gray-900 tracking-tight truncate">내 포스트잇</h1>
-          <!-- 5번: 개인별 독립 공간 전환 버튼 -->
           <button onclick="openProfileModal()" id="current-profile-badge"
             class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95">
             내 공간 ▾
@@ -295,7 +294,6 @@
 
     <main id="home-grid" class="flex-1 overflow-y-auto px-4 pb-28 grid grid-cols-2 gap-3.5 content-start no-scrollbar"></main>
 
-    <!-- 1번 & 2번: 연보라색 포스트잇 모양 새 노트 추가 버튼 -->
     <button onclick="openCreateSheet()" class="postit-btn fixed bottom-6 right-6 w-16 h-16 rounded-tl-2xl rounded-tr-md rounded-bl-md flex flex-col items-center justify-center z-20">
       <span class="text-2xl leading-none text-purple-950 font-light">+</span>
       <span class="text-[11px] font-bold text-purple-950 mt-0.5">새 노트</span>
@@ -342,15 +340,21 @@
 
     <div id="linked-chips-bar" class="hidden px-4 py-2 bg-black/[0.04] border-b border-black/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"></div>
 
-    <!-- 속지 본문 (빈 속지 칸을 직접 터치하면 바로 그 줄에 글쓰기 가능) -->
-    <div id="editor-canvas" onclick="handleCanvasDirectClick(event)" class="flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar flex flex-col">
-      <input id="editor-title-input" type="text" placeholder="제목을 입력하세요..."
+    <!-- 중간 위치 선택 사진 삽입 안내 배너 -->
+    <div id="photo-insert-guide-bar" class="hidden px-4 py-2 bg-[#EDE9FE] border-b border-purple-200 text-purple-950 text-xs font-bold flex justify-between items-center shrink-0">
+      <span>사진을 넣을 위치를 선택하세요</span>
+      <button onclick="cancelPhotoInsertMode()" class="px-2.5 py-1 bg-white text-purple-950 rounded-lg text-[11px] border border-purple-200">취소</button>
+    </div>
+
+    <!-- 속지 본문 (빈 공간 클릭 시 사진 크기/삭제 편집 모드 자동 해제) -->
+    <div id="editor-canvas" onclick="handleCanvasDirectClick(event)" class="relative flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar flex flex-col">
+      <input id="editor-title-input" type="text" placeholder="제목을 입력하세요."
         oninput="updateCurrentTitle(this.value)"
-        class="w-full text-lg font-bold bg-transparent border-none outline-none h-8 leading-8 my-2 shrink-0" />
+        class="w-full text-lg font-bold bg-transparent border-none outline-none h-8 leading-8 my-2 shrink-0 placeholder-gray-400" />
 
       <div id="blocks-container" class="space-y-4"></div>
 
-      <!-- 빈 속지 영역: 여기를 터치하면 칸에 맞춰 바로 텍스트 줄이 생성됨 -->
+      <!-- 빈 속지 터치 영역 -->
       <div id="empty-sheet-tap-zone" class="flex-1 min-h-[160px] cursor-text"></div>
     </div>
 
@@ -359,14 +363,14 @@
       <button onclick="undoDeleteBlock()" class="px-3 py-1 bg-white text-purple-950 rounded-lg font-bold">실행취소</button>
     </div>
 
-    <!-- 2번: 연보라색 통일 하단 버튼 -->
-    <div class="fixed bottom-0 inset-x-0 max-w-[600px] mx-auto bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2.5 z-20 flex gap-2">
+    <!-- 키보드 위에 따라 올라오는 하단 바 -->
+    <div id="editor-bottom-bar" class="fixed bottom-0 inset-x-0 max-w-[600px] mx-auto bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2 z-20 flex gap-2 transition-all duration-150">
       <button onclick="addSameAsLastBlock()" id="quick-add-same-btn"
-        class="flex-1 py-3 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
+        class="flex-1 py-2.5 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
         틀 추가 (좌측 사진형)
       </button>
       <button onclick="openAddBlockModal()"
-        class="flex-1 py-3 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
+        class="flex-1 py-2.5 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
         새로운 틀 추가
       </button>
     </div>
@@ -381,9 +385,23 @@
       </div>
 
       <div class="mb-5">
+        <div class="text-xs font-bold text-gray-500 mb-2">사진 추가 (위치 선택 가능)</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="closeEditorDrawer(); startPhotoInsertMode('gallery');"
+            class="py-2.5 px-3 rounded-xl bg-[#EDE9FE] hover:bg-[#E4DDFD] text-center text-xs font-bold text-purple-950">
+            이미지 추가
+          </button>
+          <button onclick="closeEditorDrawer(); startPhotoInsertMode('camera');"
+            class="py-2.5 px-3 rounded-xl bg-[#EDE9FE] hover:bg-[#E4DDFD] text-center text-xs font-bold text-purple-950">
+            카메라로 추가
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-5">
         <div class="text-xs font-bold text-gray-500 mb-2">파일 연결</div>
         <button onclick="closeEditorDrawer(); openLinkModal();"
-          class="w-full py-2.5 px-3.5 rounded-xl bg-[#EDE9FE] hover:bg-[#E4DDFD] text-left text-xs font-bold text-purple-950 flex justify-between items-center">
+          class="w-full py-2.5 px-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-left text-xs font-bold text-gray-800 flex justify-between items-center">
           <span>연관 노트 묶기 / 해제</span>
           <span>→</span>
         </button>
@@ -418,7 +436,7 @@
     </div>
   </div>
 
-  <!-- ================= 3. 새 노트 속지 & 틀 선택 바텀 시트 (연보라색 포인트 적용) ================= -->
+  <!-- ================= 3. 새 노트 속지 & 틀 선택 바텀 시트 ================= -->
   <div id="create-sheet-backdrop" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeCreateSheet(event)">
     <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
@@ -427,7 +445,7 @@
       <div class="mb-4">
         <div class="text-[11px] font-semibold text-gray-500 mb-1.5">실물 미리보기</div>
         <div id="preview-box" class="px-4 py-3 rounded-2xl border border-black/10 shadow-inner transition-all paper-grid" style="background-color: #FEF9C3;">
-          <div id="preview-title-text" class="text-sm font-bold leading-8 mb-1">새 체크리스트 제목</div>
+          <div id="preview-title-text" class="text-sm font-bold leading-8 mb-1 text-gray-400">제목을 입력하세요.</div>
           <div id="preview-block-render"></div>
         </div>
       </div>
@@ -592,12 +610,13 @@
 
 <div id="print-area" class="hidden"></div>
 <input type="file" id="hidden-file-input" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)" />
+<input type="file" id="single-gallery-input" accept="image/*" class="hidden" onchange="handleSinglePhotoUpload(event)" />
+<input type="file" id="single-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleSinglePhotoUpload(event)" />
 
 <script>
-  // ================= 개인별 독립 공간 + IndexedDB / localStorage 이중 영구 저장 =================
-  const DB_NAME = 'PostitHybridApp_DB_v1';
+  const DB_NAME = 'PostitHybridApp_DB_v6';
   const STORE_NAME = 'userSpaces';
-  const META_KEY = 'postit_profiles_meta_v1';
+  const META_KEY = 'postit_profiles_meta_v6';
   let dbInstance = null;
 
   let profiles = [{ id: 'user_default', name: '내 공간' }];
@@ -640,12 +659,11 @@
     } catch (_) {}
   }
 
-  // 최초 실행 사용자에게 제공되는 '앱 사용 설명서' 노트 1개
   function getInitialGuideNotes() {
     return [
       {
         id: 'guide_note_1',
-        title: '앱 사용 가이드',
+        title: '앱 사용 설명서',
         parentId: null,
         bgColor: '#FEF9C3',
         paper: 'grid',
@@ -655,38 +673,44 @@
             type: 'plain-text',
             done: false,
             title: '',
-            memo: '속지 빈 칸을 톡 누르면 별도 상자 없이 줄에 맞춰 바로 글을 쓸 수 있습니다.',
+            memo: '1. 속지 빈 칸을 톡 누르면 칸에 맞춰 바로 일반 메모를 쓸 수 있습니다.',
             cardBg: 'transparent',
-            photos: []
+            photos: [],
+            subChecks: []
           },
           {
             id: 'gb_2',
             type: 'left-photo',
             done: false,
-            title: '하단 버튼으로 틀 추가',
-            memo: '좌측 손잡이(⋮⋮)를 잡아 위아래로 순서를 바꿀 수 있습니다.',
+            title: '2. 글 영역이 늘어나면 사진도 비율에 맞게 자동 확장',
+            memo: '세부 메모 옆 + 체크 버튼으로 하위 체크리스트를 추가해 보세요.',
             cardBg: 'rgba(255,255,255,0.92)',
-            photos: []
+            photos: [],
+            subChecks: [
+              { id: 'sc_1', text: '지우기 시 체크박스만 지워져 일반 메모로 전환됩니다.', done: false, isPlainMemo: false }
+            ]
           },
           {
             id: 'gb_3',
             type: 'split-slim',
             done: false,
             done2: true,
-            title: '2분할 슬림바 좌측',
-            title2: '2분할 슬림바 우측',
+            title: '3. 좌측 슬림 체크',
+            title2: '우측 슬림 체크',
             memo: '',
             cardBg: 'rgba(255,255,255,0.92)',
-            photos: []
+            photos: [],
+            subChecks: []
           },
           {
             id: 'gb_4',
             type: 'slim',
             done: false,
-            title: '우측 상단 점 3개(⋮)에서 속지·틀·파일 연결 변경',
+            title: '4. 점 3개(⋮)에서 사진 추가 후 원하는 중간 위치에 삽입 가능',
             memo: '',
             cardBg: 'rgba(255,255,255,0.92)',
-            photos: []
+            photos: [],
+            subChecks: []
           }
         ]
       }
@@ -703,7 +727,6 @@
       cpRecentColors
     };
 
-    // 1차: IndexedDB 저장 (고화질 사진 및 대용량 데이터 영구 보존)
     if (dbInstance) {
       try {
         const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
@@ -711,7 +734,6 @@
       } catch (_) {}
     }
 
-    // 2차: localStorage 백업 저장
     try {
       localStorage.setItem(`postit_backup_${currentProfileId}`, JSON.stringify(payload));
     } catch (_) {}
@@ -755,10 +777,26 @@
   let recentTabIds = ['guide_note_1'];
   let linkingRootId = null;
   let actionTargetNoteId = null;
-  let isFolderCardDragging = false;
+  let isHomeCardDragging = false;
   let isSpreadingGroup = false;
 
   let completedSortMode = 'bottom';
+
+  let editingSinglePhotoId = null;
+  let singlePhotoLongPressTimer = null;
+  let singlePhotoResizeState = {
+    active: false,
+    blockId: null,
+    startX: 0,
+    startW: 200
+  };
+
+  let isProcessingSingleUpload = false;
+  let pendingPhotoInsertMode = null;
+  let pendingPhotoInsertIndex = null;
+
+  let autoScrollInterval = null;
+  let latestPointerY = 0;
 
   let dragInfo = {
     timer: null,
@@ -770,7 +808,7 @@
     pointerId: null
   };
 
-  let folderDragInfo = {
+  let homeDragInfo = {
     timer: null,
     active: false,
     noteId: null,
@@ -816,7 +854,6 @@
     { id: 'dot', label: '도트' }
   ];
 
-  // 4번 & 5번: '사진만', '2분할 슬림바' 추가 및 '텍스트' 포함 총 8종 (1페이지당 3개씩 스와이프)
   const ALL_LAYOUTS = [
     { id: 'left-photo', label: '좌측 사진형' },
     { id: 'right-photo', label: '우측 사진형' },
@@ -828,6 +865,29 @@
     { id: 'plain-text', label: '텍스트' }
   ];
   const ITEMS_PER_PAGE = 3;
+
+  // ================= 휴대폰 키보드 켜짐 감지 -> 하단 바 키보드 위로 이동 & 리스트 방해 차단 =================
+  (function initKeyboardViewportAdjust() {
+    if (!window.visualViewport) return;
+    const adjustBarForKeyboard = () => {
+      const bar = document.getElementById('editor-bottom-bar');
+      const canvas = document.getElementById('editor-canvas');
+      if (!bar || !canvas) return;
+
+      const vv = window.visualViewport;
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+
+      if (keyboardHeight > 80) {
+        bar.style.bottom = `${keyboardHeight}px`;
+        canvas.style.paddingBottom = `${keyboardHeight + 88}px`;
+      } else {
+        bar.style.bottom = '0px';
+        canvas.style.paddingBottom = '128px';
+      }
+    };
+    window.visualViewport.addEventListener('resize', adjustBarForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustBarForKeyboard);
+  })();
 
   function isDarkColor(colorStr) {
     if (!colorStr || colorStr === 'transparent') return false;
@@ -944,7 +1004,7 @@
       </svg>`;
   }
 
-  // ================= 5번: 개인별 독립 공간(프로필) 관리 =================
+  // ================= 개인별 독립 공간(프로필) 관리 =================
   function openProfileModal() {
     renderProfileList();
     document.getElementById('profile-modal').classList.remove('hidden');
@@ -1007,22 +1067,27 @@
     await switchProfile(newId);
   }
 
-  // ================= 7번: 속지 빈 칸을 직접 터치하면 바로 줄에 맞춰 텍스트 입력 =================
+  // ================= 2번: 빈 공간 클릭 시 사진 수정 모드 즉시 완료 & 속지 직접 터치 글쓰기 =================
   function handleCanvasDirectClick(e) {
-    // 기존 블록 카드나 제목을 직접 누른 것이 아니라 속지의 빈 칸을 눌렀을 때만 동작
+    // 2번: 사진 수정(크기 조절·삭제 버튼) 중일 때 사진 바깥의 빈 공간을 클릭하면 즉시 완료되어 핸들이 사라짐
+    if (editingSinglePhotoId && !e.target.closest(`[data-block-id="${editingSinglePhotoId}"]`)) {
+      editingSinglePhotoId = null;
+      renderEditor();
+      return;
+    }
+
+    if (pendingPhotoInsertMode) return;
     if (e.target.closest('.block-item') || e.target.id === 'editor-title-input') return;
 
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
 
-    // 마지막 블록이 이미 비어있는 순수 텍스트 줄이면 거기에 바로 포커스
     const lastBlock = note.blocks[note.blocks.length - 1];
     if (lastBlock && lastBlock.type === 'plain-text' && !lastBlock.memo.trim()) {
       const lastTa = document.querySelector(`[data-block-id="${lastBlock.id}"] textarea`);
       if (lastTa) { lastTa.focus(); return; }
     }
 
-    // 아니면 클릭한 위치 바로 아래에 테두리 없는 순수 속지 줄글 블록을 생성하고 즉시 커서 활성화
     const newId = 'b' + Date.now();
     note.blocks.push({
       id: newId,
@@ -1031,7 +1096,8 @@
       title: '',
       memo: '',
       cardBg: 'transparent',
-      photos: []
+      photos: [],
+      subChecks: []
     });
     saveStateToDB();
     renderEditor();
@@ -1049,6 +1115,168 @@
     el.style.height = '32px';
     const snapped = Math.max(32, Math.ceil(el.scrollHeight / 32) * 32);
     el.style.height = snapped + 'px';
+  }
+
+  // ================= 중간 위치 선택 사진 추가 & 사진 수정 모드 =================
+  function startPhotoInsertMode(mode) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+
+    if (note.blocks.length === 0) {
+      selectPhotoInsertIndex(0, mode);
+      return;
+    }
+
+    pendingPhotoInsertMode = mode;
+    renderEditor();
+  }
+
+  function cancelPhotoInsertMode() {
+    pendingPhotoInsertMode = null;
+    pendingPhotoInsertIndex = null;
+    renderEditor();
+  }
+
+  function selectPhotoInsertIndex(insertIdx, overrideMode = null) {
+    const mode = overrideMode || pendingPhotoInsertMode;
+    if (!mode) return;
+    pendingPhotoInsertIndex = insertIdx;
+    pendingPhotoInsertMode = null;
+    renderEditor();
+
+    if (mode === 'camera') {
+      const camInput = document.getElementById('single-camera-input');
+      camInput.value = '';
+      camInput.click();
+    } else {
+      const galInput = document.getElementById('single-gallery-input');
+      galInput.value = '';
+      galInput.click();
+    }
+  }
+
+  async function handleSinglePhotoUpload(e) {
+    if (isProcessingSingleUpload) return;
+    const file = e.target.files?.[0];
+    if (!file) {
+      pendingPhotoInsertIndex = null;
+      return;
+    }
+
+    isProcessingSingleUpload = true;
+    try {
+      const note = notes.find(n => n.id === currentNoteId);
+      if (!note) return;
+
+      const dataUrl = await compressAndPersistImage(file);
+      const newId = 'b' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const newPhotoBlock = {
+        id: newId,
+        type: 'single-photo',
+        done: false,
+        title: '',
+        memo: '',
+        cardBg: 'transparent',
+        photoWidth: 220,
+        photos: [dataUrl],
+        subChecks: []
+      };
+
+      if (typeof pendingPhotoInsertIndex === 'number' && pendingPhotoInsertIndex >= 0 && pendingPhotoInsertIndex <= note.blocks.length) {
+        note.blocks.splice(pendingPhotoInsertIndex, 0, newPhotoBlock);
+      } else {
+        note.blocks.push(newPhotoBlock);
+      }
+
+      // 추가 직후 크기 조절이 가능하도록 활성화 (빈 공간 클릭 시 자동 완료)
+      editingSinglePhotoId = newId;
+      saveStateToDB();
+      renderEditor();
+    } finally {
+      isProcessingSingleUpload = false;
+      pendingPhotoInsertIndex = null;
+      e.target.value = '';
+    }
+  }
+
+  function handleSinglePhotoPointerDown(e, blockId) {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('.photo-resize-handle')) return;
+    clearTimeout(singlePhotoLongPressTimer);
+
+    singlePhotoLongPressTimer = setTimeout(() => {
+      editingSinglePhotoId = blockId;
+      if (navigator.vibrate) navigator.vibrate(25);
+      renderEditor();
+    }, 350);
+
+    handleCardLongPressDrag(e, blockId);
+  }
+
+  function startSinglePhotoResize(e, blockId) {
+    e.stopPropagation();
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    singlePhotoResizeState.active = true;
+    singlePhotoResizeState.blockId = blockId;
+    singlePhotoResizeState.startX = e.clientX;
+    singlePhotoResizeState.startW = block.photoWidth || 220;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (!singlePhotoResizeState.active) return;
+    e.preventDefault();
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === singlePhotoResizeState.blockId);
+    const card = document.querySelector(`[data-block-id="${singlePhotoResizeState.blockId}"]`);
+    const imgBox = card?.querySelector('.single-photo-box');
+    if (!block || !imgBox) return;
+
+    const newW = Math.max(90, Math.min(480, Math.round(singlePhotoResizeState.startW + (e.clientX - singlePhotoResizeState.startX))));
+    block.photoWidth = newW;
+    imgBox.style.width = `${newW}px`;
+  }, { passive: false });
+
+  document.addEventListener('pointerup', () => {
+    clearTimeout(singlePhotoLongPressTimer);
+    if (singlePhotoResizeState.active) {
+      singlePhotoResizeState.active = false;
+      saveStateToDB();
+    }
+  });
+  document.addEventListener('pointercancel', () => {
+    clearTimeout(singlePhotoLongPressTimer);
+    singlePhotoResizeState.active = false;
+  });
+
+  // ================= 드래그 이동 중 화면 상·하단 자동 스크롤 엔진 =================
+  function startAutoScrollLoop(scrollContainerEl, onSwapCheck) {
+    stopAutoScrollLoop();
+    autoScrollInterval = setInterval(() => {
+      if (!scrollContainerEl) return;
+      const rect = scrollContainerEl.getBoundingClientRect();
+      const edgeThreshold = 75;
+      const maxSpeed = 14;
+
+      if (latestPointerY < rect.top + edgeThreshold) {
+        const ratio = Math.max(0, (rect.top + edgeThreshold - latestPointerY) / edgeThreshold);
+        scrollContainerEl.scrollTop -= Math.ceil(maxSpeed * ratio);
+        if (onSwapCheck) onSwapCheck(latestPointerY);
+      } else if (latestPointerY > rect.bottom - edgeThreshold) {
+        const ratio = Math.max(0, (latestPointerY - (rect.bottom - edgeThreshold)) / edgeThreshold);
+        scrollContainerEl.scrollTop += Math.ceil(maxSpeed * ratio);
+        if (onSwapCheck) onSwapCheck(latestPointerY);
+      }
+    }, 16);
+  }
+
+  function stopAutoScrollLoop() {
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      autoScrollInterval = null;
+    }
   }
 
   // ================= 1페이지당 3개씩 노출되는 손가락 가로 스와이프 캐러셀 =================
@@ -1328,7 +1556,7 @@
     grid.innerHTML = visibleNotes.map(note => {
       const children = notes.filter(n => n.parentId === note.id);
       const isStackedGroup = !activeFolderId && children.length > 0;
-      const previewBlocks = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only').slice(0, gridCols === 3 ? 3 : 5);
+      const previewBlocks = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only' && b.type !== 'single-photo').slice(0, gridCols === 3 ? 3 : 5);
       const theme = getContrastTheme(note.bgColor, '#FFFFFF');
 
       const cornerMoreBtn = `
@@ -1361,6 +1589,7 @@
         return `
           <div
             data-home-note-id="${note.id}"
+            onpointerdown="startHomeCardDragPointer(event, '${note.id}')"
             onclick="handleStackedGroupClick(this, '${note.id}')"
             class="stacked-note-wrap">
             ${backSheetsHTML}
@@ -1378,11 +1607,13 @@
               <div class="space-y-1.5">
                 ${previewBlocks.map(b => `
                   <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
-                    <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-                      class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
-                      ${b.done ? '✓' : ''}
-                    </span>
-                    <span class="truncate ${b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
+                    ${b.isPlainMemo ? '' : `
+                      <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                        class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                        ${b.done ? '✓' : ''}
+                      </span>
+                    `}
+                    <span class="truncate ${!b.isPlainMemo && b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
                   </div>
                 `).join('')}
               </div>
@@ -1395,7 +1626,7 @@
       return `
         <div
           data-home-note-id="${note.id}"
-          onpointerdown="startFolderNoteDragPointer(event, '${note.id}')"
+          onpointerdown="startHomeCardDragPointer(event, '${note.id}')"
           onclick="handleCardClick('${note.id}')"
           style="background-color: ${note.bgColor}; --line-color:${theme.lineColor}; --dot-color:${theme.dotColor}; border-color:${theme.borderColor};"
           class="home-note-card relative rounded-2xl p-3.5 pb-6 border shadow-sm cursor-pointer transition active:scale-98 paper-${note.paper}">
@@ -1405,11 +1636,13 @@
           <div class="space-y-1.5">
             ${previewBlocks.map(b => `
               <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
-                <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-                  class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
-                  ${b.done ? '✓' : ''}
-                </span>
-                <span class="truncate ${b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
+                ${b.isPlainMemo ? '' : `
+                  <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                    class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                    ${b.done ? '✓' : ''}
+                  </span>
+                `}
+                <span class="truncate ${!b.isPlainMemo && b.done ? 'line-through opacity-50' : ''}">${b.title || '항목'}</span>
               </div>
             `).join('')}
           </div>
@@ -1420,6 +1653,10 @@
   }
 
   function handleStackedGroupClick(wrapEl, noteId) {
+    if (isHomeCardDragging) {
+      isHomeCardDragging = false;
+      return;
+    }
     if (isSpreadingGroup) return;
     isSpreadingGroup = true;
     wrapEl.classList.add('is-spreading');
@@ -1438,44 +1675,49 @@
     }
   }
 
-  function startFolderNoteDragPointer(e, noteId) {
-    if (!activeFolderId) return;
+  function startHomeCardDragPointer(e, noteId) {
     if (e.target.closest('button')) return;
 
-    isFolderCardDragging = false;
-    clearTimeout(folderDragInfo.timer);
+    isHomeCardDragging = false;
+    clearTimeout(homeDragInfo.timer);
 
     const cardEl = e.currentTarget;
-    folderDragInfo.startX = e.clientX;
-    folderDragInfo.startY = e.clientY;
+    homeDragInfo.startX = e.clientX;
+    homeDragInfo.startY = e.clientY;
+    latestPointerY = e.clientY;
 
-    folderDragInfo.timer = setTimeout(() => {
-      isFolderCardDragging = true;
-      folderDragInfo.active = true;
-      folderDragInfo.noteId = noteId;
-      folderDragInfo.el = cardEl;
-      folderDragInfo.pointerId = e.pointerId;
-      cardEl.classList.add('folder-card-dragging');
+    homeDragInfo.timer = setTimeout(() => {
+      isHomeCardDragging = true;
+      homeDragInfo.active = true;
+      homeDragInfo.noteId = noteId;
+      homeDragInfo.el = cardEl;
+      homeDragInfo.pointerId = e.pointerId;
+      cardEl.classList.add('home-card-dragging');
       try { cardEl.setPointerCapture(e.pointerId); } catch (_) {}
       if (navigator.vibrate) navigator.vibrate(25);
+
+      const gridEl = document.getElementById('home-grid');
+      startAutoScrollLoop(gridEl, null);
     }, 350);
   }
 
   document.addEventListener('pointermove', (e) => {
-    if (folderDragInfo.timer && !folderDragInfo.active) {
-      const dist = Math.hypot(e.clientX - folderDragInfo.startX, e.clientY - folderDragInfo.startY);
+    latestPointerY = e.clientY;
+
+    if (homeDragInfo.timer && !homeDragInfo.active) {
+      const dist = Math.hypot(e.clientX - homeDragInfo.startX, e.clientY - homeDragInfo.startY);
       if (dist > 14) {
-        clearTimeout(folderDragInfo.timer);
-        folderDragInfo.timer = null;
+        clearTimeout(homeDragInfo.timer);
+        homeDragInfo.timer = null;
       }
     }
 
-    if (!folderDragInfo.active || !folderDragInfo.el) return;
+    if (!homeDragInfo.active || !homeDragInfo.el) return;
     e.preventDefault();
 
     const grid = document.getElementById('home-grid');
     const items = Array.from(grid.children);
-    const draggingEl = folderDragInfo.el;
+    const draggingEl = homeDragInfo.el;
     const x = e.clientX;
     const y = e.clientY;
 
@@ -1497,48 +1739,56 @@
     }
   }, { passive: false });
 
-  function finishFolderCardDrag() {
-    clearTimeout(folderDragInfo.timer);
-    if (folderDragInfo.active && folderDragInfo.el) {
-      folderDragInfo.el.classList.remove('folder-card-dragging');
+  function finishHomeCardDrag() {
+    clearTimeout(homeDragInfo.timer);
+    if (homeDragInfo.active && homeDragInfo.el) {
+      stopAutoScrollLoop();
+      homeDragInfo.el.classList.remove('home-card-dragging');
       try {
-        if (folderDragInfo.pointerId !== null) folderDragInfo.el.releasePointerCapture(folderDragInfo.pointerId);
+        if (homeDragInfo.pointerId !== null) homeDragInfo.el.releasePointerCapture(homeDragInfo.pointerId);
       } catch (_) {}
 
       const grid = document.getElementById('home-grid');
       const orderedIds = Array.from(grid.children).map(el => el.getAttribute('data-home-note-id')).filter(Boolean);
-      if (orderedIds.length > 0 && activeFolderId) {
-        const groupSet = new Set(orderedIds);
-        const otherNotes = notes.filter(n => !groupSet.has(n.id));
-        const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
 
-        const newRoot = reorderedGroup[0];
-        const prevRoot = notes.find(n => n.id === activeFolderId);
-        const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
-        newRoot.parentId = null;
-        newRoot.folderName = savedFolderName;
+      if (orderedIds.length > 0) {
+        if (activeFolderId) {
+          const groupSet = new Set(orderedIds);
+          const otherNotes = notes.filter(n => !groupSet.has(n.id));
+          const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
 
-        for (let i = 1; i < reorderedGroup.length; i++) {
-          reorderedGroup[i].parentId = newRoot.id;
+          const newRoot = reorderedGroup[0];
+          const prevRoot = notes.find(n => n.id === activeFolderId);
+          const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
+          newRoot.parentId = null;
+          newRoot.folderName = savedFolderName;
+
+          for (let i = 1; i < reorderedGroup.length; i++) {
+            reorderedGroup[i].parentId = newRoot.id;
+          }
+          activeFolderId = newRoot.id;
+          notes = [...reorderedGroup, ...otherNotes];
+        } else {
+          const childNotes = notes.filter(n => n.parentId !== null);
+          const reorderedRoots = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
+          notes = [...reorderedRoots, ...childNotes];
         }
-        activeFolderId = newRoot.id;
-        notes = [...reorderedGroup, ...otherNotes];
         saveStateToDB();
         renderHome();
       }
     }
-    folderDragInfo.active = false;
-    folderDragInfo.noteId = null;
-    folderDragInfo.el = null;
-    folderDragInfo.pointerId = null;
+    homeDragInfo.active = false;
+    homeDragInfo.noteId = null;
+    homeDragInfo.el = null;
+    homeDragInfo.pointerId = null;
   }
 
-  document.addEventListener('pointerup', finishFolderCardDrag);
-  document.addEventListener('pointercancel', finishFolderCardDrag);
+  document.addEventListener('pointerup', finishHomeCardDrag);
+  document.addEventListener('pointercancel', finishHomeCardDrag);
 
   function handleCardClick(noteId) {
-    if (isFolderCardDragging) {
-      isFolderCardDragging = false;
+    if (isHomeCardDragging) {
+      isHomeCardDragging = false;
       return;
     }
     openNote(noteId);
@@ -1624,7 +1874,7 @@
     renderTrashList();
   }
 
-  // ================= 미니 드롭다운 메뉴 (항상 버튼 아래쪽으로 열림) =================
+  // ================= 미니 드롭다운 메뉴 =================
   function openCardPopover(e, noteId) {
     actionTargetNoteId = noteId;
     const btnRect = e.currentTarget.getBoundingClientRect();
@@ -1660,7 +1910,8 @@
       blocks: origin.blocks.map((b, i) => ({
         ...b,
         id: 'b' + Date.now() + '_' + i,
-        photos: [...(b.photos || [])]
+        photos: [...(b.photos || [])],
+        subChecks: (b.subChecks || []).map((sc, j) => ({ ...sc, id: 'sc' + Date.now() + '_' + j }))
       }))
     };
     notes.unshift(copyNote);
@@ -1709,7 +1960,7 @@
 
     note.blocks.forEach((b, idx) => {
       const y = 160 + idx * 65;
-      if (b.type === 'plain-text') {
+      if (b.type === 'plain-text' || b.isPlainMemo) {
         ctx.fillStyle = theme.titleColor;
         ctx.font = '22px sans-serif';
         ctx.fillText(b.memo || b.title || '', 48, y);
@@ -1750,7 +2001,7 @@
         <h1 style="font-size:24px; font-weight:bold; margin-bottom:16px;">${note.title || '포스트잇 노트'}</h1>
         ${note.blocks.map(b => `
           <div style="padding:10px 0; border-bottom:1px solid ${theme.borderColor}; font-size:15px;">
-            ${b.type === 'plain-text'
+            ${b.type === 'plain-text' || b.isPlainMemo
               ? `<div>${b.memo || b.title || ''}</div>`
               : `<strong>${b.done ? '[완료]' : '[미완료]'} ${b.title || ''}</strong>
                  ${b.memo ? `<div style="color:${theme.subColor}; font-size:13px; margin-top:4px;">${b.memo}</div>` : ''}`
@@ -1765,24 +2016,53 @@
     }, 150);
   }
 
-  // ================= 에디터 렌더링 & 전체 체크 사각형 & 점3개 드로어 =================
-  function openNote(noteId) {
+  // ================= 에디터 렌더링 & 탭 닫기 & 드로어 =================
+  function openNote(noteId, focusTitle = false) {
     const target = notes.find(n => n.id === noteId);
     if (!target) return;
     currentNoteId = noteId;
+    editingSinglePhotoId = null;
+    pendingPhotoInsertMode = null;
 
     const rootId = target.parentId ? target.parentId : target.id;
     if (!recentTabIds.includes(rootId)) {
       recentTabIds.push(rootId);
-      if (recentTabIds.length > 5) recentTabIds.shift();
+      if (recentTabIds.length > 6) recentTabIds.shift();
     }
 
     document.getElementById('home-view').classList.add('hidden');
     document.getElementById('editor-view').classList.remove('hidden');
     renderEditor();
+
+    if (focusTitle) {
+      requestAnimationFrame(() => {
+        const titleEl = document.getElementById('editor-title-input');
+        if (titleEl) titleEl.focus();
+      });
+    }
+  }
+
+  function closeRecentTab(e, tabId) {
+    e.stopPropagation();
+    recentTabIds = recentTabIds.filter(id => id !== tabId);
+    const currentNote = notes.find(n => n.id === currentNoteId);
+    const currentRootId = currentNote?.parentId ? currentNote.parentId : currentNote?.id;
+
+    if (currentRootId === tabId) {
+      if (recentTabIds.length > 0) {
+        openNote(recentTabIds[recentTabIds.length - 1]);
+      } else {
+        goHome();
+      }
+    } else {
+      saveStateToDB();
+      renderEditor();
+    }
   }
 
   function goHome() {
+    editingSinglePhotoId = null;
+    pendingPhotoInsertMode = null;
     document.getElementById('editor-view').classList.add('hidden');
     document.getElementById('home-view').classList.remove('hidden');
     renderHome();
@@ -1791,7 +2071,7 @@
   function toggleAllChecklists() {
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
-    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only');
+    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only' && b.type !== 'single-photo' && !b.isPlainMemo);
     if (checkable.length === 0) return;
 
     const allChecked = checkable.every(b => b.done);
@@ -1848,7 +2128,9 @@
   function setAllBlocksCardBg(bgVal) {
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
-    note.blocks.forEach(b => { b.cardBg = bgVal; });
+    note.blocks.forEach(b => {
+      if (b.type !== 'single-photo') b.cardBg = bgVal;
+    });
     saveStateToDB();
     renderDrawerControls();
     renderEditor();
@@ -1859,7 +2141,9 @@
     if (!note) return;
     carouselPages.drawer = pageIdx;
     note.blocks.forEach(b => {
+      if (b.type === 'single-photo') return;
       b.type = type;
+      b.isPlainMemo = false;
       if (type === 'split-slim' && typeof b.title2 === 'undefined') {
         b.title2 = '';
         b.done2 = false;
@@ -1895,11 +2179,12 @@
       </button>
     `).join('');
 
-    const currentCardBg = note.blocks.length > 0 ? note.blocks[0].cardBg : 'rgba(255,255,255,0.95)';
+    const firstTemplateBlock = note.blocks.find(b => b.type !== 'single-photo');
+    const currentCardBg = firstTemplateBlock ? firstTemplateBlock.cardBg : 'rgba(255,255,255,0.95)';
     document.getElementById('drawer-block-colors').innerHTML =
       renderColorSwatchesHTML(baseBlockColors, currentCardBg, 'setAllBlocksCardBg', 'drawer-block');
 
-    const currentLayout = note.blocks.length > 0 ? note.blocks[0].type : 'left-photo';
+    const currentLayout = firstTemplateBlock ? firstTemplateBlock.type : 'left-photo';
     renderPagedLayoutCarousel('drawer', currentLayout, 'applyLayoutToCurrentNote');
   }
 
@@ -1908,7 +2193,14 @@
     if (!note) return;
     const noteTheme = getContrastTheme(note.bgColor, '#FFFFFF');
 
-    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only');
+    const insertBanner = document.getElementById('photo-insert-guide-bar');
+    if (pendingPhotoInsertMode) {
+      insertBanner.classList.remove('hidden');
+    } else {
+      insertBanner.classList.add('hidden');
+    }
+
+    const checkable = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only' && b.type !== 'single-photo' && !b.isPlainMemo);
     const allChecked = checkable.length > 0 && checkable.every(b => b.done);
     const allCheckSquare = document.getElementById('all-check-square');
     allCheckSquare.style.borderColor = noteTheme.checkBorder;
@@ -1925,13 +2217,17 @@
       if (!tNote) return '';
       const isActive = id === activeRootId;
       return `
-        <button onclick="openNote('${id}')"
-          class="px-3 py-1.5 rounded-t-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+        <div onclick="openNote('${id}')"
+          class="pl-3 pr-1.5 py-1.5 rounded-t-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
             isActive ? 'bg-white text-gray-900 shadow-sm' : 'bg-gray-200/70 text-gray-500'
           }">
-          <span class="w-2 h-2 rounded-full border border-black/20" style="background:${tNote.bgColor}"></span>
-          <span class="max-w-[95px] truncate">${tNote.title || '무제'}</span>
-        </button>
+          <span class="w-2 h-2 rounded-full border border-black/20 shrink-0" style="background:${tNote.bgColor}"></span>
+          <span class="max-w-[85px] truncate">${tNote.title || '제목 없음'}</span>
+          <button type="button" onclick="closeRecentTab(event, '${id}')" title="탭 닫기"
+            class="w-4 h-4 rounded-full hover:bg-black/10 text-[10px] text-gray-400 hover:text-gray-700 flex items-center justify-center shrink-0">
+            ✕
+          </button>
+        </div>
       `;
     }).join('');
 
@@ -1957,7 +2253,7 @@
             class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${
               isCurrent ? 'bg-[#EDE9FE] border border-purple-300 text-purple-950' : 'bg-white border border-gray-200 text-gray-600'
             }">
-            ${idx === 0 ? '메인' : idx + '.'} ${item.title}
+            ${idx === 0 ? '메인' : idx + '.'} ${item.title || '제목 없음'}
           </button>
         `;
       }).join('');
@@ -1969,7 +2265,7 @@
     canvas.style.backgroundColor = note.bgColor;
     canvas.style.setProperty('--line-color', noteTheme.lineColor);
     canvas.style.setProperty('--dot-color', noteTheme.dotColor);
-    canvas.className = `flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar paper-${note.paper} flex flex-col`;
+    canvas.className = `relative flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar paper-${note.paper} flex flex-col`;
 
     const topbar = document.getElementById('editor-topbar');
     topbar.style.backgroundColor = note.bgColor;
@@ -1987,15 +2283,203 @@
       displayBlocks.sort((a, b) => Number(a.done) - Number(b.done));
     }
 
-    document.getElementById('blocks-container').innerHTML = displayBlocks.map(block => renderBlockHTML(block, false, note.bgColor)).join('');
+    const renderInsertSlot = (idx) => {
+      if (!pendingPhotoInsertMode) return '';
+      return `
+        <button type="button" onclick="selectPhotoInsertIndex(${idx})"
+          class="w-full py-2 rounded-xl border-2 border-dashed border-purple-400 bg-[#EDE9FE]/80 text-purple-950 text-xs font-bold active:scale-98 transition">
+          + 여기에 사진 넣기
+        </button>
+      `;
+    };
 
-    // 순수 텍스트 라인 높이 자동 스냅
+    let html = renderInsertSlot(0);
+    displayBlocks.forEach((block, i) => {
+      html += renderBlockHTML(block, false, note.bgColor);
+      html += renderInsertSlot(i + 1);
+    });
+    document.getElementById('blocks-container').innerHTML = html;
+
     requestAnimationFrame(() => {
       document.querySelectorAll('.direct-sheet-line').forEach(autoResizeSheetLine);
     });
 
-    const lastType = note.blocks.length > 0 ? note.blocks[note.blocks.length - 1].type : draftLayout;
+    const lastBlock = [...note.blocks].reverse().find(b => b.type !== 'single-photo');
+    const lastType = lastBlock ? lastBlock.type : draftLayout;
     document.getElementById('quick-add-same-btn').textContent = `틀 추가 (${getLayoutLabel(lastType)})`;
+  }
+
+  // ================= 지우기(Backspace) 시 체크박스만 지워지고 일반 메모 유지 + 엔터 시 일반 메모 유지 =================
+  function handleMainCheckInputKeyDown(e, blockId) {
+    if (e.isComposing) return;
+    const el = e.currentTarget;
+
+    if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
+      const note = notes.find(n => n.id === currentNoteId);
+      const block = note?.blocks.find(b => b.id === blockId);
+      if (block && !block.isPlainMemo) {
+        e.preventDefault();
+        block.isPlainMemo = true;
+        block.done = false;
+        saveStateToDB();
+        renderEditor();
+        requestAnimationFrame(() => {
+          const inp = document.querySelector(`[data-block-id="${blockId}"] input[data-role="main-title"]`);
+          if (inp) {
+            inp.focus();
+            inp.setSelectionRange(0, 0);
+          }
+        });
+      }
+    }
+  }
+
+  function addSubChecklist(blockId, afterSubId = null, inheritPlainMemo = false) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (!block) return;
+    if (!Array.isArray(block.subChecks)) block.subChecks = [];
+
+    const newSubId = 'sc_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const newItem = { id: newSubId, text: '', done: false, isPlainMemo: inheritPlainMemo };
+
+    if (afterSubId) {
+      const idx = block.subChecks.findIndex(s => s.id === afterSubId);
+      if (idx !== -1) {
+        block.subChecks.splice(idx + 1, 0, newItem);
+      } else {
+        block.subChecks.push(newItem);
+      }
+    } else {
+      block.subChecks.push(newItem);
+    }
+
+    saveStateToDB();
+    renderEditor();
+    requestAnimationFrame(() => {
+      const inp = document.querySelector(`[data-sub-id="${newSubId}"] input`);
+      if (inp) inp.focus();
+    });
+  }
+
+  function handleSubCheckKeyDown(e, blockId, subId) {
+    if (e.isComposing) return;
+    const el = e.currentTarget;
+
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (!block || !Array.isArray(block.subChecks)) return;
+
+    const idx = block.subChecks.findIndex(s => s.id === subId);
+    if (idx === -1) return;
+    const targetSub = block.subChecks[idx];
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSubChecklist(blockId, subId, Boolean(targetSub.isPlainMemo));
+      return;
+    }
+
+    if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
+      e.preventDefault();
+
+      if (!targetSub.isPlainMemo) {
+        targetSub.isPlainMemo = true;
+        targetSub.done = false;
+        saveStateToDB();
+        renderEditor();
+        requestAnimationFrame(() => {
+          const sameInp = document.querySelector(`[data-sub-id="${subId}"] input`);
+          if (sameInp) {
+            sameInp.focus();
+            sameInp.setSelectionRange(0, 0);
+          }
+        });
+        return;
+      }
+
+      if (el.value === '') {
+        const prevSubId = idx > 0 ? block.subChecks[idx - 1].id : null;
+        block.subChecks.splice(idx, 1);
+        saveStateToDB();
+        renderEditor();
+
+        requestAnimationFrame(() => {
+          if (prevSubId) {
+            const prevInp = document.querySelector(`[data-sub-id="${prevSubId}"] input`);
+            if (prevInp) {
+              prevInp.focus();
+              const len = prevInp.value.length;
+              prevInp.setSelectionRange(len, len);
+            }
+          } else {
+            const blockEl = document.querySelector(`[data-block-id="${blockId}"]`);
+            const fallbackInput = blockEl?.querySelector('input[placeholder*="메모"], textarea, input[type="text"]');
+            if (fallbackInput) fallbackInput.focus();
+          }
+        });
+      }
+    }
+  }
+
+  function toggleSubCheck(blockId, subId) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    const sub = block?.subChecks?.find(s => s.id === subId);
+    if (sub) {
+      sub.done = !sub.done;
+      saveStateToDB();
+      renderEditor();
+    }
+  }
+
+  function updateSubCheckText(blockId, subId, val) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    const sub = block?.subChecks?.find(s => s.id === subId);
+    if (sub) {
+      sub.text = val;
+      saveStateToDB();
+    }
+  }
+
+  function deleteSubCheck(blockId, subId) {
+    const note = notes.find(n => n.id === currentNoteId);
+    const block = note?.blocks.find(b => b.id === blockId);
+    if (block && Array.isArray(block.subChecks)) {
+      block.subChecks = block.subChecks.filter(s => s.id !== subId);
+      saveStateToDB();
+      renderEditor();
+    }
+  }
+
+  function renderSubChecklistSection(b, isPreview, theme) {
+    const subs = b.subChecks || [];
+    if (subs.length === 0) return '';
+    return `
+      <div class="mt-1.5 pt-1.5 border-t space-y-1" style="border-color:${theme.borderColor};">
+        ${subs.map(sc => `
+          <div data-sub-id="${sc.id}" class="flex items-center gap-1.5">
+            ${sc.isPlainMemo ? '' : `
+              <button type="button" onclick="${isPreview ? '' : `toggleSubCheck('${b.id}', '${sc.id}')`}"
+                style="border-color:${theme.checkBorder}; background:${sc.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                ${sc.done ? '✓' : ''}
+              </button>
+            `}
+            <input type="text" value="${sc.text || ''}" placeholder="${sc.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+              oninput="updateSubCheckText('${b.id}', '${sc.id}', this.value)"
+              onkeydown="${isPreview ? '' : `handleSubCheckKeyDown(event, '${b.id}', '${sc.id}')`}"
+              style="color:${!sc.isPlainMemo && sc.done ? theme.mutedColor : theme.subColor};"
+              class="flex-1 min-w-0 text-xs bg-transparent outline-none ${!sc.isPlainMemo && sc.done ? 'line-through' : ''}" />
+            ${isPreview ? '' : `
+              <button type="button" onclick="deleteSubCheck('${b.id}', '${sc.id}')"
+                style="color:${theme.mutedColor};" class="text-[10px] px-1 hover:text-red-500">✕</button>
+            `}
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
   function renderBlockHTML(b, isPreview, parentBgColor) {
@@ -2013,7 +2497,7 @@
       </div>
     `;
 
-    const checkBtn = `
+    const checkBtn = b.isPlainMemo ? '' : `
       <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
         style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
         class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-1.5">
@@ -2029,17 +2513,26 @@
       </button>
     `;
 
-    const photoThumb = (photos) => {
+    const addSubCheckBtn = isPreview ? '' : `
+      <button type="button" onclick="addSubChecklist('${b.id}', null, false)" title="체크리스트 추가"
+        style="background:${theme.chipBg}; color:${theme.subColor};"
+        class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 active:scale-95">
+        + 체크
+      </button>
+    `;
+
+    // 1번: 어떤 크기/비율의 사진이든 사진 중심(object-cover object-center)이 정확히 보이도록 정렬
+    const stretchPhotoThumb = (photos) => {
       if (!photos || photos.length === 0) {
         return `<button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
           style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
-          class="w-16 h-16 rounded-xl border border-dashed flex flex-col items-center justify-center text-[10px] shrink-0">+ 사진</button>`;
+          class="w-20 min-h-[64px] self-stretch rounded-xl border border-dashed flex flex-col items-center justify-center text-[10px] shrink-0">+ 사진</button>`;
       }
       return `
-        <div class="relative w-16 h-16 shrink-0 cursor-pointer" onclick="${isPreview ? '' : `openLightbox('${b.id}', 0)`}">
-          <img src="${photos[0]}" onerror="this.style.display='none'" class="w-full h-full object-cover rounded-xl border border-black/10" />
+        <div class="relative w-20 min-h-[64px] self-stretch shrink-0 cursor-pointer overflow-hidden rounded-xl border border-black/10 flex items-center justify-center" onclick="${isPreview ? '' : `openLightbox('${b.id}', 0)`}">
+          <img src="${photos[0]}" onerror="this.style.display='none'" class="w-full h-full object-cover object-center" />
           ${photos.length > 1 ? `<span class="absolute bottom-1 right-1 bg-black/75 text-white text-[10px] font-bold px-1.5 rounded-md">+${photos.length - 1}</span>` : ''}
-          <button onclick="event.stopPropagation(); ${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 text-white rounded-full text-[11px] flex items-center justify-center shadow">+</button>
+          <button onclick="event.stopPropagation(); ${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}" class="absolute top-1 right-1 w-5 h-5 bg-purple-600 text-white rounded-full text-[11px] flex items-center justify-center shadow">+</button>
         </div>
       `;
     };
@@ -2049,13 +2542,47 @@
       isTransparent ? 'shadow-none' : 'shadow-sm'
     }`;
 
-    // 7번: 테두리 박스 없이 속지 칸(32px)에 바로 맞춰지는 순수 텍스트 라인
+    // 2번: 단독 사진 블록 (좌측 완료 버튼 제거 -> 사진 바깥 빈 공간 클릭 시 편집 자동 완료)
+    if (b.type === 'single-photo') {
+      const imgW = b.photoWidth || 220;
+      const src = b.photos && b.photos[0] ? b.photos[0] : '';
+      const isEditing = !isPreview && editingSinglePhotoId === b.id;
+
+      return `
+        <div data-block-id="${b.id}"
+          onpointerdown="${isPreview ? '' : `handleSinglePhotoPointerDown(event, '${b.id}')`}"
+          class="block-item flex items-start gap-1.5 py-0.5 transition-transform">
+          ${isEditing ? dragHandle : ''}
+          <div class="flex-1 flex flex-col items-start">
+            <div class="single-photo-box relative inline-block rounded-2xl ${isEditing ? 'ring-2 ring-purple-400' : ''}" style="width:${imgW}px; max-width:100%;">
+              <img src="${src}" onclick="if(!editingSinglePhotoId) openLightbox('${b.id}', 0)"
+                class="w-full h-auto rounded-2xl object-contain object-center shadow-sm cursor-pointer block" />
+              ${isEditing ? `
+                <!-- 우측 상단 삭제 버튼만 유지 (좌측 완료 버튼 제거) -->
+                <button type="button" onclick="deleteBlock('${b.id}')"
+                  class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">
+                  ✕
+                </button>
+                <!-- 우측 하단 크기 조절 핸들 -->
+                <div onpointerdown="startSinglePhotoResize(event, '${b.id}')"
+                  title="드래그하여 사진 크기 조절"
+                  style="touch-action: none;"
+                  class="photo-resize-handle absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center cursor-nwse-resize shadow">
+                  ⤡
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     if (b.type === 'plain-text') {
       return `
         <div data-block-id="${b.id}" ${longPressAttr}
           class="block-item flex items-start gap-1 py-0.5 transition-transform">
           ${dragHandle}
-          <textarea rows="1" placeholder="칸에 맞춰 바로 글을 쓰세요..."
+          <textarea rows="1" placeholder="메모를 입력하세요."
             oninput="updateBlockField('${b.id}','memo',this.value); autoResizeSheetLine(this)"
             style="color:${theme.titleColor};"
             class="direct-sheet-line flex-1">${b.memo || ''}</textarea>
@@ -2064,52 +2591,56 @@
       `;
     }
 
-    // 4번(추가): '사진만' 틀 (글씨 칸 없이 사진만 깔끔하게 나열)
     if (b.type === 'photo-only') {
+      const photos = b.photos || [];
       return `
         <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-center gap-2">
           ${dragHandle}
-          <div class="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-            ${(b.photos || []).map((src, idx) => `
-              <img src="${src}" onerror="this.style.display='none'" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}" class="w-24 h-24 rounded-xl object-cover border border-black/10 shrink-0 cursor-pointer" />
+          <div class="flex-1 flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+            ${photos.length === 0 ? `
+              <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
+                style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
+                class="w-24 h-24 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
+                + 사진
+              </button>
+            ` : photos.map((src, idx) => `
+              <div class="relative w-24 h-24 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-black/10 flex items-center justify-center" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}">
+                <img src="${src}" onerror="this.style.display='none'" class="w-full h-full object-cover object-center" />
+                ${idx === photos.length - 1 && !isPreview ? `
+                  <button onclick="event.stopPropagation(); triggerPhotoUpload('${b.id}')"
+                    class="absolute top-1 right-1 w-5 h-5 bg-purple-600 text-white rounded-full text-[11px] flex items-center justify-center shadow">+</button>
+                ` : ''}
+              </div>
             `).join('')}
-            <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
-              style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
-              class="w-24 h-24 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
-              + 사진 추가
-            </button>
           </div>
           ${deleteBtn}
         </div>
       `;
     }
 
-    // 4번(추가): '2분할 슬림바' (한 줄에 체크리스트 2개가 나란히 배치)
     if (b.type === 'split-slim') {
       return `
         <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
           class="block-item rounded-xl px-2.5 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-center gap-1.5 transition-transform">
           ${dragHandle}
-          <!-- 좌측 항목 -->
           <div class="flex-1 min-w-0 flex items-center gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
               style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
               class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
               ${b.done ? '✓' : ''}
             </button>
-            <input type="text" value="${b.title || ''}" placeholder="항목 1" oninput="updateBlockField('${b.id}','title',this.value)"
+            <input type="text" value="${b.title || ''}" placeholder="리스트를 입력하세요." oninput="updateBlockField('${b.id}','title',this.value)"
               style="color:${b.done ? theme.mutedColor : theme.titleColor};"
               class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
           </div>
           <div style="background:${theme.borderColor};" class="w-[1px] h-5 shrink-0 mx-0.5"></div>
-          <!-- 우측 항목 -->
           <div class="flex-1 min-w-0 flex items-center gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockSecondDone('${b.id}')`}"
               style="border-color:${theme.checkBorder}; background:${b.done2 ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
               class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
               ${b.done2 ? '✓' : ''}
             </button>
-            <input type="text" value="${b.title2 || ''}" placeholder="항목 2" oninput="updateBlockField('${b.id}','title2',this.value)"
+            <input type="text" value="${b.title2 || ''}" placeholder="리스트를 입력하세요." oninput="updateBlockField('${b.id}','title2',this.value)"
               style="color:${b.done2 ? theme.mutedColor : theme.titleColor};"
               class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done2 ? 'line-through' : ''}" />
           </div>
@@ -2120,67 +2651,105 @@
 
     if (b.type === 'left-photo') {
       return `
-        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-start gap-2">
-          ${dragHandle}
-          ${checkBtn}
-          ${photoThumb(b.photos)}
-          <div class="flex-1 min-w-0">
-            <input type="text" value="${b.title}" placeholder="할 일 제목" oninput="updateBlockField('${b.id}','title',this.value)"
-              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
-            <input type="text" value="${b.memo}" placeholder="세부 메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
-              style="color:${theme.subColor};"
-              class="w-full text-xs leading-8 bg-transparent outline-none" />
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass}">
+          <div class="flex items-stretch gap-2">
+            <div class="flex items-start gap-1.5 pt-0.5 shrink-0">
+              ${dragHandle}
+              ${checkBtn}
+            </div>
+            ${stretchPhotoThumb(b.photos)}
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                oninput="updateBlockField('${b.id}','title',this.value)"
+                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
+              <div class="flex items-center gap-1">
+                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
+                  style="color:${theme.subColor};"
+                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
+                ${addSubCheckBtn}
+              </div>
+              ${renderSubChecklistSection(b, isPreview, theme)}
+            </div>
+            <div class="flex items-start shrink-0">
+              ${deleteBtn}
+            </div>
           </div>
-          ${deleteBtn}
         </div>
       `;
     }
 
     if (b.type === 'right-photo') {
       return `
-        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass} flex items-start gap-2">
-          ${dragHandle}
-          ${checkBtn}
-          <div class="flex-1 min-w-0">
-            <input type="text" value="${b.title}" placeholder="할 일 제목" oninput="updateBlockField('${b.id}','title',this.value)"
-              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
-            <input type="text" value="${b.memo}" placeholder="세부 메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
-              style="color:${theme.subColor};"
-              class="w-full text-xs leading-8 bg-transparent outline-none" />
+        <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass}">
+          <div class="flex items-stretch gap-2">
+            <div class="flex items-start gap-1.5 pt-0.5 shrink-0">
+              ${dragHandle}
+              ${checkBtn}
+            </div>
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                oninput="updateBlockField('${b.id}','title',this.value)"
+                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
+              <div class="flex items-center gap-1">
+                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
+                  style="color:${theme.subColor};"
+                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
+                ${addSubCheckBtn}
+              </div>
+              ${renderSubChecklistSection(b, isPreview, theme)}
+            </div>
+            ${stretchPhotoThumb(b.photos)}
+            <div class="flex items-start shrink-0">
+              ${deleteBtn}
+            </div>
           </div>
-          ${photoThumb(b.photos)}
-          ${deleteBtn}
         </div>
       `;
     }
 
     if (b.type === 'top-photo') {
+      const photos = b.photos || [];
       return `
         <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};" class="${cardClass}">
           <div class="flex items-start gap-2 mb-1.5">
             ${dragHandle}
             ${checkBtn}
             <div class="flex-1 min-w-0">
-              <input type="text" value="${b.title}" placeholder="제목" oninput="updateBlockField('${b.id}','title',this.value)"
-                style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
-              <input type="text" value="${b.memo}" placeholder="메모 입력..." oninput="updateBlockField('${b.id}','memo',this.value)"
-                style="color:${theme.subColor};"
-                class="w-full text-xs leading-8 bg-transparent outline-none" />
+              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                oninput="updateBlockField('${b.id}','title',this.value)"
+                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
+              <div class="flex items-center gap-1">
+                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
+                  style="color:${theme.subColor};"
+                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
+                ${addSubCheckBtn}
+              </div>
+              ${renderSubChecklistSection(b, isPreview, theme)}
             </div>
             ${deleteBtn}
           </div>
-          <div class="flex gap-2 overflow-x-auto no-scrollbar pt-1 pl-6">
-            ${(b.photos || []).map((src, idx) => `
-              <img src="${src}" onerror="this.style.display='none'" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}" class="w-20 h-20 rounded-xl object-cover border border-black/10 shrink-0 cursor-pointer" />
+          <div class="flex gap-2.5 overflow-x-auto no-scrollbar pt-1 pl-6">
+            ${photos.length === 0 ? `
+              <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
+                style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
+                class="w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
+                + 사진
+              </button>
+            ` : photos.map((src, idx) => `
+              <div class="relative w-20 h-20 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-black/10 flex items-center justify-center" onclick="${isPreview ? '' : `openLightbox('${b.id}', ${idx})`}">
+                <img src="${src}" onerror="this.style.display='none'" class="w-full h-full object-cover object-center" />
+                ${idx === photos.length - 1 && !isPreview ? `
+                  <button onclick="event.stopPropagation(); triggerPhotoUpload('${b.id}')"
+                    class="absolute top-1 right-1 w-5 h-5 bg-purple-600 text-white rounded-full text-[11px] flex items-center justify-center shadow">+</button>
+                ` : ''}
+              </div>
             `).join('')}
-            <button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
-              style="border-color:${theme.borderColor}; color:${theme.subColor}; background:${theme.chipBg};"
-              class="w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center text-[11px] shrink-0">
-              + 사진 추가
-            </button>
           </div>
         </div>
       `;
@@ -2192,12 +2761,18 @@
           ${dragHandle}
           ${checkBtn}
           <div class="flex-1 min-w-0">
-            <input type="text" value="${b.title}" placeholder="주제 제목" oninput="updateBlockField('${b.id}','title',this.value)"
-              style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-              class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
-            <textarea rows="2" placeholder="메모 내용을 자유롭게 적으세요..." oninput="updateBlockField('${b.id}','memo',this.value)"
+            <div class="flex items-center justify-between gap-1">
+              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                oninput="updateBlockField('${b.id}','title',this.value)"
+                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                class="flex-1 min-w-0 text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
+              ${addSubCheckBtn}
+            </div>
+            <textarea rows="2" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
               style="color:${theme.subColor};"
               class="w-full text-xs leading-8 bg-transparent outline-none resize-none">${b.memo}</textarea>
+            ${renderSubChecklistSection(b, isPreview, theme)}
           </div>
           ${deleteBtn}
         </div>
@@ -2206,17 +2781,25 @@
 
     return `
       <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
-        class="block-item rounded-xl px-3 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-center gap-2 transition-transform">
-        ${dragHandle}
-        <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
-          style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-          class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0">
-          ${b.done ? '✓' : ''}
-        </button>
-        <input type="text" value="${b.title}" placeholder="간단 체크 항목..." oninput="updateBlockField('${b.id}','title',this.value)"
-          style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-          class="flex-1 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
-        ${deleteBtn}
+        class="block-item rounded-xl px-3 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} transition-transform">
+        <div class="flex items-center gap-2">
+          ${dragHandle}
+          ${b.isPlainMemo ? '' : `
+            <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
+              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0">
+              ${b.done ? '✓' : ''}
+            </button>
+          `}
+          <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+            oninput="updateBlockField('${b.id}','title',this.value)"
+            onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+            style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+            class="flex-1 text-xs font-semibold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
+          ${addSubCheckBtn}
+          ${deleteBtn}
+        </div>
+        ${renderSubChecklistSection(b, isPreview, theme)}
       </div>
     `;
   }
@@ -2231,7 +2814,7 @@
     }
   }
 
-  // ================= 에디터 내 블록 드래그 순서 변경 =================
+  // ================= 에디터 내 블록 드래그 순서 변경 + 자동 스크롤 연동 =================
   function startImmediateDrag(e, blockId) {
     e.stopPropagation();
     const cardEl = e.currentTarget.closest('.block-item');
@@ -2249,6 +2832,7 @@
     dragInfo.blockId = blockId;
     dragInfo.el = cardEl;
     dragInfo.active = false;
+    latestPointerY = e.clientY;
 
     clearTimeout(dragInfo.timer);
     dragInfo.timer = setTimeout(() => {
@@ -2256,37 +2840,12 @@
     }, 300);
   }
 
-  function activateDrag(e, blockId, cardEl) {
-    dragInfo.active = true;
-    dragInfo.blockId = blockId;
-    dragInfo.el = cardEl;
-    dragInfo.pointerId = e.pointerId;
-    cardEl.classList.add('block-dragging');
-    try {
-      cardEl.setPointerCapture(e.pointerId);
-    } catch (_) {}
-    if (navigator.vibrate) navigator.vibrate(25);
-  }
-
-  document.addEventListener('pointermove', (e) => {
-    if (!dragInfo.blockId || !dragInfo.el) return;
-
-    if (!dragInfo.active) {
-      const dist = Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY);
-      if (dist > 14) {
-        clearTimeout(dragInfo.timer);
-        dragInfo.blockId = null;
-        dragInfo.el = null;
-      }
-      return;
-    }
-
-    e.preventDefault();
+  function swapDraggedBlockAtPointer(pointerY) {
     const container = document.getElementById('blocks-container');
-    const items = Array.from(container.children);
     const draggingEl = dragInfo.el;
-    const pointerY = e.clientY;
+    if (!container || !draggingEl) return;
 
+    const items = Array.from(container.children).filter(el => el.classList.contains('block-item'));
     for (const item of items) {
       if (item === draggingEl) continue;
       const rect = item.getBoundingClientRect();
@@ -2303,18 +2862,55 @@
         break;
       }
     }
+  }
+
+  function activateDrag(e, blockId, cardEl) {
+    dragInfo.active = true;
+    dragInfo.blockId = blockId;
+    dragInfo.el = cardEl;
+    dragInfo.pointerId = e.pointerId;
+    latestPointerY = e.clientY;
+    cardEl.classList.add('block-dragging');
+    try {
+      cardEl.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    if (navigator.vibrate) navigator.vibrate(25);
+
+    const canvasEl = document.getElementById('editor-canvas');
+    startAutoScrollLoop(canvasEl, swapDraggedBlockAtPointer);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    latestPointerY = e.clientY;
+    if (!dragInfo.blockId || !dragInfo.el) return;
+
+    if (!dragInfo.active) {
+      const dist = Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY);
+      if (dist > 14) {
+        clearTimeout(dragInfo.timer);
+        dragInfo.blockId = null;
+        dragInfo.el = null;
+      }
+      return;
+    }
+
+    e.preventDefault();
+    swapDraggedBlockAtPointer(e.clientY);
   }, { passive: false });
 
   function endBlockDrag() {
     clearTimeout(dragInfo.timer);
     if (dragInfo.active && dragInfo.el) {
+      stopAutoScrollLoop();
       dragInfo.el.classList.remove('block-dragging');
       try {
         if (dragInfo.pointerId !== null) dragInfo.el.releasePointerCapture(dragInfo.pointerId);
       } catch (_) {}
 
       const container = document.getElementById('blocks-container');
-      const orderedIds = Array.from(container.children).map(el => el.getAttribute('data-block-id'));
+      const orderedIds = Array.from(container.children)
+        .filter(el => el.classList.contains('block-item'))
+        .map(el => el.getAttribute('data-block-id'));
       const note = notes.find(n => n.id === currentNoteId);
       if (note && orderedIds.length > 0) {
         const reordered = [];
@@ -2348,6 +2944,7 @@
     if (idx === -1) return;
 
     const [removed] = note.blocks.splice(idx, 1);
+    if (editingSinglePhotoId === blockId) editingSinglePhotoId = null;
     lastDeletedBlockInfo = { noteId: note.id, index: idx, block: removed };
     saveStateToDB();
     renderEditor();
@@ -2400,7 +2997,7 @@
     }
   }
 
-  // ================= 색 선택 칩 렌더링 (연보라색 강조) =================
+  // ================= 색 선택 칩 렌더링 =================
   function renderColorSwatchesHTML(colors, selectedVal, onSelectExpr, pickerTarget) {
     const swatches = colors.map(c => {
       const isTrans = c === 'transparent';
@@ -2481,18 +3078,19 @@
     previewBox.style.setProperty('--line-color', previewTheme.lineColor);
     previewBox.style.setProperty('--dot-color', previewTheme.dotColor);
     previewBox.className = `px-4 py-3 rounded-2xl border border-black/10 shadow-inner transition-all paper-${draftPaper}`;
-    document.getElementById('preview-title-text').style.color = previewTheme.titleColor;
 
     const sampleBlock = {
       id: 'preview',
       type: draftLayout,
       done: false,
       done2: false,
-      title: '미리보기 항목 1',
-      title2: '미리보기 항목 2',
-      memo: '배경 밝기에 맞춰 글자색이 자동 조정됩니다',
+      isPlainMemo: false,
+      title: '리스트를 입력하세요.',
+      title2: '리스트를 입력하세요.',
+      memo: '메모를 입력하세요.',
       cardBg: draftBlockColor,
-      photos: []
+      photos: [],
+      subChecks: []
     };
     document.getElementById('preview-block-render').innerHTML = renderBlockHTML(sampleBlock, true, draftColor);
   }
@@ -2501,7 +3099,7 @@
     const newId = 'n' + Date.now();
     notes.unshift({
       id: newId,
-      title: '새 포스트잇 노트',
+      title: '',
       parentId: activeFolderId || null,
       bgColor: draftColor,
       paper: draftPaper,
@@ -2511,24 +3109,26 @@
           type: draftLayout,
           done: false,
           done2: false,
+          isPlainMemo: false,
           title: '',
           title2: '',
           memo: '',
           cardBg: draftLayout === 'plain-text' ? 'transparent' : draftBlockColor,
-          photos: []
+          photos: [],
+          subChecks: []
         }
       ]
     });
     saveStateToDB();
     closeCreateSheet();
-    openNote(newId);
+    openNote(newId, true);
   }
 
   // ================= 에디터 내 새 틀 추가 모달 =================
   function addSameAsLastBlock() {
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
-    const lastBlock = note.blocks.length > 0 ? note.blocks[note.blocks.length - 1] : null;
+    const lastBlock = [...note.blocks].reverse().find(b => b.type !== 'single-photo');
     const lastType = lastBlock ? lastBlock.type : draftLayout;
     const lastBg = lastBlock ? lastBlock.cardBg : draftBlockColor;
     addBlockWithType(lastType, 0, lastBg);
@@ -2536,7 +3136,7 @@
 
   function openAddBlockModal() {
     const note = notes.find(n => n.id === currentNoteId);
-    const lastBlock = note && note.blocks.length > 0 ? note.blocks[note.blocks.length - 1] : null;
+    const lastBlock = [...(note?.blocks || [])].reverse().find(b => b.type !== 'single-photo');
     modalNewBlockColor = lastBlock && lastBlock.cardBg !== 'transparent' ? lastBlock.cardBg : 'rgba(255,255,255,0.95)';
     document.getElementById('add-block-modal').classList.remove('hidden');
     renderModalLayouts();
@@ -2573,11 +3173,13 @@
       type,
       done: false,
       done2: false,
+      isPlainMemo: false,
       title: '',
       title2: '',
       memo: '',
       cardBg: type === 'plain-text' ? 'transparent' : cardBg,
-      photos: []
+      photos: [],
+      subChecks: []
     });
     saveStateToDB();
     closeAddBlockModal();
@@ -2610,7 +3212,7 @@
           }">
           <div class="flex items-center gap-2.5">
             <span class="w-3.5 h-3.5 rounded-full border border-black/20" style="background:${c.bgColor}"></span>
-            <span class="text-xs font-bold text-gray-800">${c.title}</span>
+            <span class="text-xs font-bold text-gray-800">${c.title || '제목 없음'}</span>
           </div>
           <span class="w-5 h-5 rounded-md border flex items-center justify-center text-xs ${
             isLinked ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-300'
