@@ -740,6 +740,7 @@
   let isInitialCloudHydrated = false;
   let dirtyNoteIdsForCloud = new Set();
   let deletedNoteIdsForCloud = new Set();
+  let permanentlyDeletedIds = new Set();
   let dirtyRoomsForCloud = new Set();
 
   let cloudSaveDebounceTimer = null;
@@ -777,6 +778,9 @@
         const parsed = JSON.parse(raw);
         personalVaultCode = parsed.personalVaultCode || '';
         joinedSharedRooms = Array.isArray(parsed.joinedSharedRooms) ? parsed.joinedSharedRooms : [];
+        if (Array.isArray(parsed.permanentlyDeletedIds)) {
+          permanentlyDeletedIds = new Set(parsed.permanentlyDeletedIds);
+        }
       }
     } catch (_) {}
   }
@@ -785,7 +789,8 @@
     try {
       localStorage.setItem(SYNC_META_KEY, JSON.stringify({
         personalVaultCode,
-        joinedSharedRooms
+        joinedSharedRooms,
+        permanentlyDeletedIds: Array.from(permanentlyDeletedIds)
       }));
     } catch (_) {}
   }
@@ -1046,7 +1051,10 @@
     }
 
     // 2) 다중 공유방: 해당 방의 notesMap에 변경된 노트 ID만 개별 PATCH
-    for (const roomName of targetRooms) {
+    const effectiveRooms = targetDeleteIds.length > 0
+      ? Array.from(new Set([...targetRooms, ...joinedSharedRooms]))
+      : targetRooms;
+    for (const roomName of effectiveRooms) {
       const roomKey = encodeFirebaseKey(roomName);
       const roomPatch = {};
 
@@ -1185,7 +1193,7 @@
 
     incomingList.forEach(remoteNote => {
       if (!remoteNote || !remoteNote.id) return;
-      if (deletedNoteIdsForCloud.has(remoteNote.id)) return;
+      if (deletedNoteIdsForCloud.has(remoteNote.id) || permanentlyDeletedIds.has(remoteNote.id)) return;
       if (trashedNotes.some(t => t.id === remoteNote.id)) return;
 
       const localIdx = notes.findIndex(n => n.id === remoteNote.id);
@@ -1216,7 +1224,8 @@
 
     incomingList.forEach(remoteNote => {
       if (!remoteNote || !remoteNote.id) return;
-      if (deletedNoteIdsForCloud.has(remoteNote.id)) return;
+      if (deletedNoteIdsForCloud.has(remoteNote.id) || permanentlyDeletedIds.has(remoteNote.id)) return;
+      if (trashedNotes.some(t => t.id === remoteNote.id)) return;
 
       const localIdx = notes.findIndex(n => n.id === remoteNote.id);
       const mergedRoomsSet = new Set([
@@ -1706,6 +1715,7 @@
   let homeDragInfo = {
     timer: null,
     active: false,
+    hasMovedSignificantly: false,
     noteId: null,
     el: null,
     mergeTargetId: null,
@@ -2507,6 +2517,7 @@
       return `
         <div
           data-home-note-id="${note.id}"
+          oncontextmenu="return false;"
           onpointerdown="startHomeCardDragPointer(event, '${note.id}')"
           onclick="handleCardClick('${note.id}')"
           style="background-color: ${note.bgColor}; --line-color:${theme.lineColor}; --dot-color:${theme.dotColor}; border-color:${theme.borderColor};"
@@ -2568,11 +2579,13 @@
     const cardEl = e.currentTarget;
     homeDragInfo.startX = e.clientX;
     homeDragInfo.startY = e.clientY;
+    homeDragInfo.hasMovedSignificantly = false;
     latestPointerY = e.clientY;
 
     homeDragInfo.timer = setTimeout(() => {
       isHomeCardDragging = true;
       homeDragInfo.active = true;
+      homeDragInfo.hasMovedSignificantly = false;
       homeDragInfo.noteId = noteId;
       homeDragInfo.el = cardEl;
       homeDragInfo.mergeTargetId = null;
@@ -2599,6 +2612,10 @@
 
     if (!homeDragInfo.active || !homeDragInfo.el) return;
     e.preventDefault();
+    if (Math.hypot(e.clientX - homeDragInfo.startX, e.clientY - homeDragInfo.startY) > 22) {
+      homeDragInfo.hasMovedSignificantly = true;
+    }
+    if (!homeDragInfo.hasMovedSignificantly) return;
 
     const grid = document.getElementById('home-grid');
     const items = Array.from(grid.children);
@@ -2649,10 +2666,10 @@
       const grid = document.getElementById('home-grid');
       Array.from(grid.children).forEach(el => el.classList.remove('merge-target-highlight'));
 
-      if (!activeFolderId && homeDragInfo.mergeTargetId && homeDragInfo.mergeTargetId !== homeDragInfo.noteId) {
+      if (!activeFolderId && homeDragInfo.mergeTargetId && homeDragInfo.mergeTargetId !== homeDragInfo.noteId && homeDragInfo.hasMovedSignificantly) {
         const draggedNote = notes.find(n => n.id === homeDragInfo.noteId);
         const targetNote = notes.find(n => n.id === homeDragInfo.mergeTargetId);
-        if (draggedNote && targetNote) {
+        if (draggedNote && targetNote && !targetNote.parentId) {
           draggedNote.parentId = targetNote.id;
           const targetRooms = getNoteSharedRooms(targetNote);
           if (targetRooms.length > 0) {
@@ -2886,15 +2903,29 @@
 
   function permanentlyDeleteNote(noteId) {
     trashedNotes = trashedNotes.filter(n => n.id !== noteId);
+    notes = notes.filter(n => n.id !== noteId);
     deletedNoteIdsForCloud.add(noteId);
-    saveStateToDB();
+    permanentlyDeletedIds.add(noteId);
+    saveSyncMeta();
+    saveLocalVault();
+    if (getCleanFirebaseUrl() && isInitialCloudHydrated) {
+      flushPendingPatchToCloud();
+    }
     renderTrashList();
   }
 
   function emptyAllTrash() {
-    trashedNotes.forEach(t => deletedNoteIdsForCloud.add(t.id));
+    trashedNotes.forEach(t => {
+      deletedNoteIdsForCloud.add(t.id);
+      permanentlyDeletedIds.add(t.id);
+      notes = notes.filter(n => n.id !== t.id);
+    });
     trashedNotes = [];
-    saveStateToDB();
+    saveSyncMeta();
+    saveLocalVault();
+    if (getCleanFirebaseUrl() && isInitialCloudHydrated) {
+      flushPendingPatchToCloud();
+    }
     renderTrashList();
   }
 
@@ -2955,18 +2986,27 @@
 
   function moveTargetNoteToTrash() {
     if (!actionTargetNoteId) return;
-    const toTrash = notes.filter(n => n.id === actionTargetNoteId || n.parentId === actionTargetNoteId);
-    const affectedRooms = new Set();
-    toTrash.forEach(n => {
-      getNoteSharedRooms(n).forEach(r => affectedRooms.add(r));
-      n.sharedRooms = [];
-      deletedNoteIdsForCloud.add(n.id);
+    const targetNote = notes.find(n => n.id === actionTargetNoteId);
+    if (!targetNote) return;
+
+    const affectedRooms = new Set(getNoteSharedRooms(targetNote));
+    targetNote.sharedRooms = [];
+    deletedNoteIdsForCloud.add(targetNote.id);
+
+    // 하위 묶음 노트가 있었다면 함께 삭제하지 않고 홈 화면 최상위 노트로 안전하게 분리
+    const detachedChildren = [];
+    notes.forEach(n => {
+      if (n.parentId === actionTargetNoteId) {
+        n.parentId = null;
+        detachedChildren.push(n);
+      }
     });
-    trashedNotes.unshift(...toTrash);
-    notes = notes.filter(n => n.id !== actionTargetNoteId && n.parentId !== actionTargetNoteId);
+
+    trashedNotes.unshift(targetNote);
+    notes = notes.filter(n => n.id !== actionTargetNoteId);
     recentTabIds = recentTabIds.filter(id => id !== actionTargetNoteId);
     if (activeFolderId === actionTargetNoteId) activeFolderId = null;
-    saveStateToDB(null, Array.from(affectedRooms));
+    saveStateToDB(detachedChildren, Array.from(affectedRooms));
     closeCardPopover();
     renderHome();
   }
