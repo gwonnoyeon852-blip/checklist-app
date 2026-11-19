@@ -49,7 +49,7 @@
       background-position: 16px 16px;
     }
 
-    /* 10번: 홈 화면에서 뒤쪽 카드가 옆·위·아래 다른 노트와 절대 겹치지 않도록 여백 확보 */
+    /* 홈 화면 카드 겹침 여백 */
     .stacked-note-wrap {
       position: relative;
       padding-top: 14px;
@@ -86,7 +86,6 @@
       transform: translate(26px, -13px) rotate(13deg) !important;
     }
 
-    /* 9번: 홈에서 노트를 다른 노트 위에 겹쳐서 묶으려 할 때 하이라이트 */
     .merge-target-highlight {
       outline: 2.5px dashed #8B5CF6 !important;
       outline-offset: 3px;
@@ -95,10 +94,9 @@
       border-radius: 18px;
     }
 
-    /* 미니 드롭다운 메뉴 */
     .mini-popover {
       position: fixed;
-      width: 120px;
+      width: 132px;
       background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 14px;
@@ -113,7 +111,6 @@
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    /* 포스트잇 모양 새 노트 버튼 (연보라색) */
     .postit-btn {
       background-color: #EDE9FE;
       border: 1px solid #DDD6FE;
@@ -133,7 +130,6 @@
       border-top-left-radius: 6px;
     }
 
-    /* 가로 스와이프 페이지 트랙 */
     .paged-carousel-track {
       display: flex;
       width: 100%;
@@ -156,7 +152,6 @@
       padding: 2px;
     }
 
-    /* 순수 속지 줄글 라인 */
     .direct-sheet-line {
       font-size: 15px;
       line-height: 32px;
@@ -172,7 +167,6 @@
       overflow: hidden;
     }
 
-    /* 4번: 어떤 리스트든 길어지면 아랫줄로 자연스럽게 줄바꿈되는 입력창 */
     .auto-wrap-input {
       width: 100%;
       background: transparent;
@@ -185,7 +179,6 @@
       overflow-wrap: break-word;
     }
 
-    /* 드래그 손잡이 */
     .drag-handle {
       touch-action: none;
       cursor: grab;
@@ -210,7 +203,6 @@
       touch-action: none !important;
     }
 
-    /* 우측 슬라이드 드로어 */
     .side-drawer-panel {
       transform: translateX(100%);
       transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
@@ -219,7 +211,6 @@
       transform: translateX(0);
     }
 
-    /* 커스텀 컬러 피커 */
     .sv-panel {
       position: relative;
       width: 100%;
@@ -294,9 +285,10 @@
         </button>
         <div id="home-title-area" class="flex items-center gap-2 min-w-0">
           <h1 id="home-header-title" class="text-xl font-bold text-gray-900 tracking-tight truncate">내 포스트잇</h1>
-          <button onclick="openProfileModal()" id="current-profile-badge"
-            class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95">
-            내 공간 ▾
+          <button onclick="openShareRoomModal()" id="share-room-badge"
+            class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95 flex items-center gap-1.5">
+            <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+            <span id="share-room-badge-text">공유방 ▾</span>
           </button>
         </div>
         <input id="folder-title-input" type="text" placeholder="묶음 제목 입력..."
@@ -304,8 +296,11 @@
           class="hidden flex-1 min-w-0 text-xl font-bold text-gray-900 bg-white/80 px-2.5 py-1 rounded-xl border border-black/15 outline-none focus:border-purple-400" />
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
+        <button id="folder-share-toggle-btn" onclick="toggleActiveFolderShare()" class="hidden px-2.5 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
+          파일 공유
+        </button>
         <button id="folder-link-header-btn" onclick="openLinkModalForFolder()" class="hidden px-2.5 py-1.5 bg-white text-black border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
-          + 노트 추가
+          + 노트
         </button>
         <button onclick="openTrashView()" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-sm active:scale-95">
           휴지통 <span id="trash-count-badge" class="text-gray-400 font-normal">0</span>
@@ -316,7 +311,6 @@
       </div>
     </header>
 
-    <!-- 10번: 카드 간 넉넉한 간격(gap-4) 확보 -->
     <main id="home-grid" class="flex-1 overflow-y-auto px-4 pb-28 grid grid-cols-2 gap-4 content-start no-scrollbar"></main>
 
     <button onclick="openCreateSheet()" class="postit-btn fixed bottom-6 right-6 w-16 h-16 rounded-tl-2xl rounded-tr-md rounded-bl-md flex flex-col items-center justify-center z-20">
@@ -344,18 +338,21 @@
 
   <!-- ================= 2. 에디터 화면 ================= -->
   <div id="editor-view" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
-    <!-- 1번: 이전에 연 노트 탭도 꾹 눌러 순서 이동 가능 -->
     <div class="bg-gray-100 pt-2 px-2 flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 shrink-0" id="recent-tabs-bar"></div>
 
     <div class="px-4 py-2 flex justify-between items-center border-b border-black/5 shrink-0" id="editor-topbar">
       <button onclick="goHome()" id="editor-home-btn" class="text-sm font-bold flex items-center gap-1 px-2 py-1 rounded-lg active:bg-black/5 shrink-0">
         ← 홈
       </button>
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
+        <!-- 현재 노트 개별 공유 ON/OFF 빠른 토글 버튼 -->
+        <button onclick="toggleCurrentNoteShare()" id="editor-share-pill"
+          class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition active:scale-95">
+          비공개
+        </button>
         <button onclick="toggleAllChecklists()" id="all-check-square" title="전체 체크 / 해제"
           class="w-[18px] h-[18px] rounded border-[1.8px] flex items-center justify-center text-[10px] font-bold transition active:scale-90">
         </button>
-        <!-- 7번: 노트 옵션 버튼을 점 3개(⋮)에서 가로 줄 3개(☰) 아이콘으로 변경 -->
         <button onclick="openEditorDrawer()" id="editor-more-btn" title="노트 설정 메뉴"
           class="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3.5px] active:bg-black/10 transition">
           <span class="w-4 h-[1.8px] rounded-full bg-current"></span>
@@ -365,16 +362,13 @@
       </div>
     </div>
 
-    <!-- 1번: 연결된 노트 칩들도 꾹 눌러 순서 이동 가능 -->
     <div id="linked-chips-bar" class="hidden px-4 py-2 bg-black/[0.04] border-b border-black/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"></div>
 
-    <!-- 중간 위치 선택 사진 삽입 안내 배너 -->
     <div id="photo-insert-guide-bar" class="hidden px-4 py-2 bg-[#EDE9FE] border-b border-purple-200 text-purple-950 text-xs font-bold flex justify-between items-center shrink-0">
       <span>사진을 넣을 위치를 선택하세요</span>
       <button onclick="cancelPhotoInsertMode()" class="px-2.5 py-1 bg-white text-purple-950 rounded-lg text-[11px] border border-purple-200">취소</button>
     </div>
 
-    <!-- 속지 본문 -->
     <div id="editor-canvas" onclick="handleCanvasDirectClick(event)" class="relative flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar flex flex-col">
       <input id="editor-title-input" type="text" placeholder="제목을 입력하세요."
         oninput="updateCurrentTitle(this.value)"
@@ -382,7 +376,6 @@
 
       <div id="blocks-container" class="space-y-4"></div>
 
-      <!-- 빈 속지 터치 영역 -->
       <div id="empty-sheet-tap-zone" class="flex-1 min-h-[160px] cursor-text"></div>
     </div>
 
@@ -391,7 +384,6 @@
       <button onclick="undoDeleteBlock()" class="px-3 py-1 bg-white text-purple-950 rounded-lg font-bold">실행취소</button>
     </div>
 
-    <!-- 11번: '틀 추가' -> '리스트 추가 (틀이름)', '새로운 틀 추가' -> '새로운 리스트 추가' -->
     <div id="editor-bottom-bar" class="fixed bottom-0 inset-x-0 max-w-[600px] mx-auto bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2 z-20 flex gap-2 transition-all duration-150">
       <button onclick="addSameAsLastBlock()" id="quick-add-same-btn"
         class="flex-1 py-2.5 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
@@ -410,6 +402,16 @@
       <div class="flex justify-between items-center pb-3 mb-4 border-b border-gray-100">
         <span class="text-sm font-bold text-gray-900">노트 옵션</span>
         <button onclick="closeEditorDrawer()" class="w-7 h-7 rounded-lg bg-[#EDE9FE] text-xs font-bold text-purple-950">✕</button>
+      </div>
+
+      <!-- 개별 공유 스위치 -->
+      <div class="mb-5">
+        <div class="text-xs font-bold text-gray-500 mb-2">공유 설정 (이 노트만 동기화)</div>
+        <button onclick="toggleCurrentNoteShare()" id="drawer-share-toggle-btn"
+          class="w-full py-2.5 px-3.5 rounded-xl border text-left text-xs font-bold flex justify-between items-center transition">
+          <span id="drawer-share-label">현재 비공개 (내 기기만 저장)</span>
+          <span id="drawer-share-badge" class="px-2 py-0.5 rounded-md text-[11px]">OFF</span>
+        </button>
       </div>
 
       <div class="mb-5">
@@ -524,21 +526,29 @@
     </div>
   </div>
 
-  <!-- ================= 5. 개인별 독립 공간(프로필) 관리 모달 ================= -->
-  <div id="profile-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-5" onclick="closeProfileModal(event)">
+  <!-- ================= 5. 공유방 연결 설정 모달 ================= -->
+  <div id="share-room-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-5" onclick="closeShareRoomModal(event)">
     <div class="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
-      <h3 class="text-base font-bold text-gray-900 mb-1">개인 사용 공간 선택</h3>
-      <p class="text-xs text-gray-500 mb-4">사용자마다 독립된 보관함에 노트와 사진이 따로 저장됩니다.</p>
+      <h3 class="text-base font-bold text-gray-900 mb-1">공유방 연결 설정</h3>
+      <p class="text-xs text-gray-500 mb-3 leading-relaxed">
+        모든 노트는 기본적으로 <strong>내 기기에만 비공개 저장</strong>됩니다.<br/>
+        상대방과 같은 공유방 이름을 입력하고, 각 노트·파일 메뉴에서 <strong>[공유 켜기]</strong>를 누른 항목만 실시간 동기화됩니다.
+      </p>
+      <div id="sync-status-banner" class="text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-3">
+        연결 상태 확인 중...
+      </div>
 
-      <div id="profile-list" class="space-y-2 mb-4 max-h-52 overflow-y-auto no-scrollbar"></div>
-
-      <div class="flex gap-2 pt-2 border-t border-gray-100">
-        <input id="new-profile-name" type="text" placeholder="새 사용자 이름 (예: 세라)"
-          class="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
-        <button onclick="createNewProfile()" class="px-3.5 py-2 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0">
-          + 추가
+      <div class="flex gap-2 mb-3">
+        <input id="share-room-input" type="text" placeholder="둘만 아는 공유방 이름 입력"
+          class="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
+        <button onclick="saveShareRoomCode()" class="px-4 py-2.5 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0">
+          연결
         </button>
       </div>
+
+      <button id="disconnect-share-btn" onclick="disconnectShareRoom()" class="hidden w-full py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold">
+        공유방 연결 해제 (내 노트만 보기)
+      </button>
     </div>
   </div>
 
@@ -586,9 +596,13 @@
     </div>
   </div>
 
-  <!-- ================= 1-3. 점 3개(⋮) 바로 아래쪽에 뜨는 미니 팝오버 메뉴 ================= -->
+  <!-- ================= 1-3. 점 3개(⋮) 미니 팝오버 메뉴 (개별 노트/파일 공유 ON/OFF 포함) ================= -->
   <div id="card-popover-backdrop" class="hidden fixed inset-0 z-40" onclick="closeCardPopover()">
     <div id="card-mini-popover" class="mini-popover" onclick="event.stopPropagation()">
+      <button type="button" id="popover-share-btn" onclick="toggleTargetNoteShare()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-purple-900">
+        공유 켜기
+      </button>
+      <div class="my-1 border-t border-gray-100"></div>
       <button type="button" onclick="duplicateTargetNote()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-gray-800">
         복사
       </button>
@@ -642,13 +656,83 @@
 <input type="file" id="single-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleSinglePhotoUpload(event)" />
 
 <script>
-  const DB_NAME = 'PostitHybridApp_DB_v7';
-  const STORE_NAME = 'userSpaces';
-  const META_KEY = 'postit_profiles_meta_v7';
+  // =========================================================================
+  // [실시간 공유 설정] 아래 따옴표 안에 Firebase Realtime Database URL을 넣어주세요!
+  // 예: const FIREBASE_DB_URL = "https://postit-share-default-rtdb.firebaseio.com";
+  // =========================================================================
+  const FIREBASE_DB_URL = "https://checklist-f6f5b-default-rtdb.firebaseio.com/";
+
+  const DB_NAME = 'PostitHybridApp_DB_v8';
+  const STORE_NAME = 'localPersonalVault';
+  const LOCAL_VAULT_KEY = 'personal_main_vault';
+  const SHARE_ROOM_META_KEY = 'postit_share_room_code_v8';
   let dbInstance = null;
 
-  let profiles = [{ id: 'user_default', name: '내 공간' }];
-  let currentProfileId = 'user_default';
+  let shareRoomCode = '';
+
+  const CLIENT_INSTANCE_ID = 'client_' + Math.random().toString(36).slice(2, 10);
+  let lastKnownCloudTimestamp = 0;
+  let cloudSaveDebounceTimer = null;
+  let cloudEventSource = null;
+  let cloudPollingTimer = null;
+  let isCloudConnected = false;
+
+  function getCleanFirebaseUrl() {
+    return (FIREBASE_DB_URL || '').trim().replace(/\/+$/, '');
+  }
+
+  function getCloudRoomKey(roomCode) {
+    const clean = (roomCode || '').trim();
+    return encodeURIComponent(clean).replace(/[.#$\[\]]/g, '_');
+  }
+
+  function loadShareRoomMeta() {
+    try {
+      shareRoomCode = localStorage.getItem(SHARE_ROOM_META_KEY) || '';
+    } catch (_) {}
+  }
+
+  function saveShareRoomMeta() {
+    try {
+      localStorage.setItem(SHARE_ROOM_META_KEY, shareRoomCode);
+    } catch (_) {}
+  }
+
+  function updateSyncStatusIndicator(connected, customText) {
+    isCloudConnected = connected;
+    const dot = document.getElementById('sync-status-dot');
+    const badgeText = document.getElementById('share-room-badge-text');
+    const banner = document.getElementById('sync-status-banner');
+    const disconnectBtn = document.getElementById('disconnect-share-btn');
+
+    if (badgeText) {
+      badgeText.textContent = shareRoomCode ? `공유: ${shareRoomCode} ▾` : '공유방 연결 ▾';
+    }
+    if (dot) {
+      dot.className = `w-1.5 h-1.5 rounded-full ${
+        !shareRoomCode ? 'bg-gray-400' : connected ? 'bg-emerald-500' : 'bg-amber-400'
+      }`;
+    }
+    if (disconnectBtn) {
+      if (shareRoomCode) disconnectBtn.classList.remove('hidden');
+      else disconnectBtn.classList.add('hidden');
+    }
+    if (banner) {
+      if (!getCleanFirebaseUrl()) {
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-3';
+        banner.textContent = '로컬 전용 모드 (코드 상단 FIREBASE_DB_URL 입력 시 공유 가능)';
+      } else if (!shareRoomCode) {
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-3';
+        banner.textContent = '공유방이 연결되지 않았습니다 (현재 모든 노트 비공개)';
+      } else if (connected) {
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3';
+        banner.textContent = customText || `실시간 공유방 연결됨: "${shareRoomCode}"`;
+      } else {
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 mb-3';
+        banner.textContent = customText || '공유방 서버 연결 중...';
+      }
+    }
+  }
 
   function openAppDB() {
     return new Promise((resolve) => {
@@ -668,31 +752,13 @@
     });
   }
 
-  function saveProfilesMeta() {
-    try {
-      localStorage.setItem(META_KEY, JSON.stringify({ profiles, currentProfileId }));
-    } catch (_) {}
-  }
-
-  function loadProfilesMeta() {
-    try {
-      const raw = localStorage.getItem(META_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
-          profiles = parsed.profiles;
-          currentProfileId = parsed.currentProfileId || profiles[0].id;
-        }
-      }
-    } catch (_) {}
-  }
-
   function getInitialGuideNotes() {
     return [
       {
         id: 'guide_note_1',
         title: '앱 사용 설명서',
         parentId: null,
+        isShared: false,
         bgColor: '#FEF9C3',
         paper: 'grid',
         blocks: [
@@ -701,7 +767,7 @@
             type: 'plain-text',
             done: false,
             title: '',
-            memo: '1. 속지 빈 칸을 톡 누르면 칸에 맞춰 바로 일반 메모를 쓸 수 있습니다.',
+            memo: '1. 모든 노트는 기본 비공개(내 기기 전용)이며, 점 3개(⋮) 메뉴에서 [공유 켜기]를 누른 노트·파일만 공유됩니다.',
             cardBg: 'transparent',
             photos: [],
             subChecks: []
@@ -745,8 +811,8 @@
     ];
   }
 
-  function saveStateToDB() {
-    const payload = {
+  function saveLocalVault() {
+    const localPayload = {
       notes,
       trashedNotes,
       recentTabIds,
@@ -754,24 +820,22 @@
       baseBlockColors,
       cpRecentColors
     };
-
     if (dbInstance) {
       try {
         const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(payload, currentProfileId);
+        tx.objectStore(STORE_NAME).put(localPayload, LOCAL_VAULT_KEY);
       } catch (_) {}
     }
-
     try {
-      localStorage.setItem(`postit_backup_${currentProfileId}`, JSON.stringify(payload));
+      localStorage.setItem('postit_local_vault_backup_v8', JSON.stringify(localPayload));
     } catch (_) {}
   }
 
-  function loadStateFromDB(profileId) {
+  function loadLocalVault() {
     return new Promise((resolve) => {
       const tryLocalFallback = () => {
         try {
-          const raw = localStorage.getItem(`postit_backup_${profileId}`);
+          const raw = localStorage.getItem('postit_local_vault_backup_v8');
           resolve(raw ? JSON.parse(raw) : null);
         } catch (_) {
           resolve(null);
@@ -784,7 +848,7 @@
       }
       try {
         const tx = dbInstance.transaction(STORE_NAME, 'readonly');
-        const req = tx.objectStore(STORE_NAME).get(profileId);
+        const req = tx.objectStore(STORE_NAME).get(LOCAL_VAULT_KEY);
         req.onsuccess = () => {
           if (req.result) resolve(req.result);
           else tryLocalFallback();
@@ -794,6 +858,302 @@
         tryLocalFallback();
       }
     });
+  }
+
+  // 비공개 노트는 절대 서버로 나가지 않고, 오직 isShared === true 인 노트/파일만 필터링하여 클라우드로 전송
+  function saveStateToDB(skipCloudPush = false) {
+    saveLocalVault();
+
+    if (!skipCloudPush && getCleanFirebaseUrl() && shareRoomCode) {
+      const nowTs = Date.now();
+      lastKnownCloudTimestamp = nowTs;
+      clearTimeout(cloudSaveDebounceTimer);
+      cloudSaveDebounceTimer = setTimeout(() => {
+        pushSharedNotesOnlyToCloud(nowTs);
+      }, 280);
+    }
+  }
+
+  async function pushSharedNotesOnlyToCloud(timestamp = Date.now()) {
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !shareRoomCode) return;
+
+    // 1) isShared가 true인 노트만 추출 (비공개 노트는 물리적으로 전송 차단)
+    const sharedNotesList = notes.filter(n => n.isShared === true).map(n => {
+      // 만약 자식 노트만 단독 공유된 경우, 상대방 화면에서 미아(고아) 노트가 되지 않도록 parentId가 공유 목록에 없으면 최상위로 노출 처리
+      const hasSharedParent = n.parentId && notes.some(p => p.id === n.parentId && p.isShared === true);
+      return {
+        ...n,
+        sharedParentId: hasSharedParent ? n.parentId : null
+      };
+    });
+
+    const cloudPayload = {
+      sharedNotes: sharedNotesList,
+      updatedAt: timestamp,
+      updatedBy: CLIENT_INSTANCE_ID
+    };
+
+    const roomKey = getCloudRoomKey(shareRoomCode);
+    try {
+      const res = await fetch(`${baseUrl}/shared_rooms/${roomKey}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloudPayload)
+      });
+      if (res.ok) {
+        updateSyncStatusIndicator(true);
+      }
+    } catch (_) {
+      updateSyncStatusIndicator(false, '오프라인 상태 (로컬에 안전 저장됨)');
+    }
+  }
+
+  async function fetchSharedNotesFromCloud(roomCode) {
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !roomCode) return null;
+    const roomKey = getCloudRoomKey(roomCode);
+    try {
+      const res = await fetch(`${baseUrl}/shared_rooms/${roomKey}.json`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      updateSyncStatusIndicator(true);
+      return data;
+    } catch (_) {
+      updateSyncStatusIndicator(false);
+      return null;
+    }
+  }
+
+  // 클라우드에서 받은 공유 노트들과 내 기기의 비공개 노트들을 한 화면에서 자연스럽게 병합
+  function mergeIncomingSharedNotes(cloudData) {
+    if (!cloudData || !Array.isArray(cloudData.sharedNotes)) return;
+    if (cloudData.updatedBy === CLIENT_INSTANCE_ID) return;
+    if (cloudData.updatedAt && cloudData.updatedAt <= lastKnownCloudTimestamp) return;
+
+    lastKnownCloudTimestamp = cloudData.updatedAt || Date.now();
+
+    const activeEl = document.activeElement;
+    const activeBlockId = activeEl?.closest('[data-block-id]')?.getAttribute('data-block-id') || null;
+    const activeSubId = activeEl?.closest('[data-sub-id]')?.getAttribute('data-sub-id') || null;
+    const activeRole = activeEl?.getAttribute('data-role') || null;
+    const activeId = activeEl?.id || null;
+    const selStart = typeof activeEl?.selectionStart === 'number' ? activeEl.selectionStart : null;
+
+    // 내 기기의 비공개 노트들은 그대로 보존하고, 공유 상태였던 노트 목록만 최신 클라우드 데이터로 교체
+    const myPrivateNotes = notes.filter(n => !n.isShared);
+    const incomingShared = cloudData.sharedNotes.map(sn => {
+      // 내 기기에 원래 부모 폴더가 비공개로 존재하는 경우라면 로컬에서의 부모-자식 관계 유지
+      const localExisting = notes.find(localN => localN.id === sn.id);
+      const preservedParentId = (localExisting && localExisting.parentId && myPrivateNotes.some(p => p.id === localExisting.parentId))
+        ? localExisting.parentId
+        : (sn.sharedParentId || null);
+
+      return {
+        ...sn,
+        isShared: true,
+        parentId: preservedParentId
+      };
+    });
+
+    notes = [...myPrivateNotes, ...incomingShared];
+    saveLocalVault();
+
+    const isEditorOpen = !document.getElementById('editor-view').classList.contains('hidden');
+    if (isEditorOpen) {
+      if (!notes.some(n => n.id === currentNoteId)) {
+        goHome();
+        return;
+      }
+      renderEditor();
+      requestAnimationFrame(() => {
+        let targetToFocus = null;
+        if (activeId) targetToFocus = document.getElementById(activeId);
+        else if (activeSubId) targetToFocus = document.querySelector(`[data-sub-id="${activeSubId}"] textarea`);
+        else if (activeBlockId && activeRole) targetToFocus = document.querySelector(`[data-block-id="${activeBlockId}"] [data-role="${activeRole}"]`);
+        else if (activeBlockId) targetToFocus = document.querySelector(`[data-block-id="${activeBlockId}"] textarea`);
+
+        if (targetToFocus) {
+          targetToFocus.focus();
+          if (selStart !== null && typeof targetToFocus.setSelectionRange === 'function') {
+            const safePos = Math.min(selStart, targetToFocus.value.length);
+            targetToFocus.setSelectionRange(safePos, safePos);
+          }
+        }
+      });
+    } else if (!document.getElementById('trash-view').classList.contains('hidden')) {
+      renderTrashList();
+    } else {
+      renderHome();
+    }
+  }
+
+  function startRealtimeSyncListener(roomCode) {
+    stopRealtimeSyncListener();
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !roomCode) {
+      updateSyncStatusIndicator(false);
+      return;
+    }
+
+    const roomKey = getCloudRoomKey(roomCode);
+    const streamUrl = `${baseUrl}/shared_rooms/${roomKey}.json`;
+
+    if (window.EventSource) {
+      try {
+        cloudEventSource = new EventSource(streamUrl);
+        cloudEventSource.addEventListener('put', (e) => {
+          updateSyncStatusIndicator(true);
+          try {
+            const parsed = JSON.parse(e.data);
+            if (parsed && parsed.path === '/' && parsed.data) {
+              mergeIncomingSharedNotes(parsed.data);
+            } else if (parsed && parsed.path !== '/') {
+              fetchSharedNotesFromCloud(roomCode).then(full => {
+                if (full) mergeIncomingSharedNotes(full);
+              });
+            }
+          } catch (_) {}
+        });
+        cloudEventSource.onerror = () => {
+          updateSyncStatusIndicator(false, '재연결 시도 중...');
+        };
+      } catch (_) {}
+    }
+
+    cloudPollingTimer = setInterval(async () => {
+      if (document.hidden) return;
+      const latest = await fetchSharedNotesFromCloud(roomCode);
+      if (latest) mergeIncomingSharedNotes(latest);
+    }, 3500);
+  }
+
+  function stopRealtimeSyncListener() {
+    if (cloudEventSource) {
+      cloudEventSource.close();
+      cloudEventSource = null;
+    }
+    if (cloudPollingTimer) {
+      clearInterval(cloudPollingTimer);
+      cloudPollingTimer = null;
+    }
+  }
+
+  // ================= 공유방 연결 모달 =================
+  function openShareRoomModal() {
+    document.getElementById('share-room-input').value = shareRoomCode;
+    updateSyncStatusIndicator(isCloudConnected);
+    document.getElementById('share-room-modal').classList.remove('hidden');
+  }
+
+  function closeShareRoomModal(e) {
+    if (!e || e.target.id === 'share-room-modal') {
+      document.getElementById('share-room-modal').classList.add('hidden');
+    }
+  }
+
+  async function saveShareRoomCode() {
+    const val = document.getElementById('share-room-input').value.trim();
+    if (!val) return;
+    shareRoomCode = val;
+    saveShareRoomMeta();
+    lastKnownCloudTimestamp = 0;
+
+    // 기존 방에 상대방이 올려둔 공유 노트가 있으면 가져와서 병합
+    const cloudData = await fetchSharedNotesFromCloud(shareRoomCode);
+    if (cloudData && Array.isArray(cloudData.sharedNotes)) {
+      mergeIncomingSharedNotes(cloudData);
+    }
+    // 내 기기에서 이미 '공유 켜기'로 지정해 둔 노트가 있다면 클라우드에 즉시 반영
+    if (notes.some(n => n.isShared)) {
+      await pushSharedNotesOnlyToCloud(Date.now());
+    }
+
+    startRealtimeSyncListener(shareRoomCode);
+    closeShareRoomModal();
+    renderHome();
+  }
+
+  function disconnectShareRoom() {
+    stopRealtimeSyncListener();
+    shareRoomCode = '';
+    saveShareRoomMeta();
+    // 연결 해제 시 상대방에게서 받아온 공유 노트만 화면에서 숨기거나 로컬 비공개 노트만 유지
+    notes = notes.filter(n => !n.isShared);
+    saveLocalVault();
+    updateSyncStatusIndicator(false);
+    closeShareRoomModal();
+    renderHome();
+  }
+
+  // ================= 개별 노트 & 묶음 파일(폴더) 공유 ON/OFF 토글 =================
+  function ensureShareRoomReady() {
+    if (!getCleanFirebaseUrl()) {
+      alert('실시간 공유를 사용하려면 먼저 코드 상단의 FIREBASE_DB_URL에 데이터베이스 주소를 입력해 주세요.');
+      return false;
+    }
+    if (!shareRoomCode) {
+      openShareRoomModal();
+      return false;
+    }
+    return true;
+  }
+
+  // 홈 화면 카드 점 3개(⋮) 메뉴에서 실행 (묶음 카드면 하위 노트까지 한꺼번에 공유 ON/OFF)
+  function toggleTargetNoteShare() {
+    const target = notes.find(n => n.id === actionTargetNoteId);
+    if (!target) return;
+    closeCardPopover();
+
+    const children = notes.filter(n => n.parentId === target.id);
+    const isFolderCard = !activeFolderId && children.length > 0;
+    const currentlyShared = isFolderCard
+      ? (target.isShared && children.every(c => c.isShared))
+      : Boolean(target.isShared);
+
+    const nextShared = !currentlyShared;
+    if (nextShared && !ensureShareRoomReady()) return;
+
+    target.isShared = nextShared;
+    if (isFolderCard) {
+      children.forEach(c => { c.isShared = nextShared; });
+    }
+
+    saveStateToDB();
+    renderHome();
+  }
+
+  // 폴더 안으로 들어갔을 때 상단 '파일 공유' 버튼으로 폴더 전체 공유 ON/OFF
+  function toggleActiveFolderShare() {
+    if (!activeFolderId) return;
+    const parent = notes.find(n => n.id === activeFolderId);
+    if (!parent) return;
+    const children = notes.filter(n => n.parentId === activeFolderId);
+    const allShared = parent.isShared && children.every(c => c.isShared);
+    const nextShared = !allShared;
+
+    if (nextShared && !ensureShareRoomReady()) return;
+
+    parent.isShared = nextShared;
+    children.forEach(c => { c.isShared = nextShared; });
+    saveStateToDB();
+    renderHome();
+  }
+
+  // 에디터 화면 상단 '비공개 / 공유중' 알약 버튼 및 드로어 스위치
+  function toggleCurrentNoteShare() {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const nextShared = !note.isShared;
+
+    if (nextShared && !ensureShareRoomReady()) return;
+
+    note.isShared = nextShared;
+    saveStateToDB();
+    renderEditor();
+    if (!document.getElementById('editor-drawer-backdrop').classList.contains('hidden')) {
+      renderDrawerControls();
+    }
   }
 
   let notes = getInitialGuideNotes();
@@ -847,11 +1207,10 @@
     pointerId: null
   };
 
-  // 1번: 상단 연 노트 탭 & 연결된 노트 칩 꾹 누르기 순서 이동 상태
   let chipDragInfo = {
     timer: null,
     active: false,
-    kind: null, // 'tab' | 'linked'
+    kind: null,
     itemId: null,
     el: null,
     startX: 0,
@@ -907,7 +1266,6 @@
   ];
   const ITEMS_PER_PAGE = 3;
 
-  // ================= 4번: 어떤 리스트든 줄이 길어지면 아랫줄로 자동 줄바꿈 높이 동기화 =================
   function autoResizeTextarea(el, minHeightPx = 32) {
     if (!el) return;
     el.style.height = minHeightPx + 'px';
@@ -923,7 +1281,6 @@
     });
   }
 
-  // ================= 휴대폰 키보드 켜짐 감지 =================
   (function initKeyboardViewportAdjust() {
     if (!window.visualViewport) return;
     const adjustBarForKeyboard = () => {
@@ -1061,70 +1418,7 @@
       </svg>`;
   }
 
-  // ================= 개인별 독립 공간(프로필) 관리 =================
-  function openProfileModal() {
-    renderProfileList();
-    document.getElementById('profile-modal').classList.remove('hidden');
-  }
-
-  function closeProfileModal(e) {
-    if (!e || e.target.id === 'profile-modal') {
-      document.getElementById('profile-modal').classList.add('hidden');
-    }
-  }
-
-  function renderProfileList() {
-    document.getElementById('profile-list').innerHTML = profiles.map(p => {
-      const isCurrent = p.id === currentProfileId;
-      return `
-        <div onclick="switchProfile('${p.id}')"
-          class="p-3 rounded-xl border flex justify-between items-center cursor-pointer ${
-            isCurrent ? 'border-purple-400 bg-[#EDE9FE] text-purple-950' : 'border-gray-200 bg-gray-50 text-gray-800'
-          }">
-          <span class="text-xs font-bold">${p.name}</span>
-          <span class="text-[11px] font-bold">${isCurrent ? '현재 사용 중' : '전환'}</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  async function switchProfile(profileId) {
-    if (profileId === currentProfileId) {
-      closeProfileModal();
-      return;
-    }
-    saveStateToDB();
-    currentProfileId = profileId;
-    saveProfilesMeta();
-
-    const loaded = await loadStateFromDB(profileId);
-    if (loaded && Array.isArray(loaded.notes)) {
-      notes = loaded.notes;
-      trashedNotes = loaded.trashedNotes || [];
-      recentTabIds = loaded.recentTabIds || [];
-    } else {
-      notes = getInitialGuideNotes();
-      trashedNotes = [];
-      recentTabIds = ['guide_note_1'];
-      saveStateToDB();
-    }
-    activeFolderId = null;
-    closeProfileModal();
-    renderHome();
-  }
-
-  async function createNewProfile() {
-    const input = document.getElementById('new-profile-name');
-    const name = input.value.trim();
-    if (!name) return;
-    const newId = 'user_' + Date.now();
-    profiles.push({ id: newId, name });
-    saveProfilesMeta();
-    input.value = '';
-    await switchProfile(newId);
-  }
-
-  // ================= 6번: 사진 추가 직후 빈 글쓰기 자동 생성 차단 & 속지 직접 터치 글쓰기 =================
+  // ================= 속지 직접 터치 글쓰기 =================
   function handleCanvasDirectClick(e) {
     if (editingSinglePhotoId && !e.target.closest(`[data-block-id="${editingSinglePhotoId}"]`)) {
       editingSinglePhotoId = null;
@@ -1132,7 +1426,6 @@
       return;
     }
 
-    // 6번: 사진 삽입 슬롯을 클릭한 직후에는 배경 클릭 글쓰기가 실행되지 않도록 차단
     if (pendingPhotoInsertMode || isProcessingSingleUpload || e.target.closest('.photo-insert-slot-btn')) {
       return;
     }
@@ -1197,7 +1490,7 @@
   }
 
   function selectPhotoInsertIndex(e, insertIdx, overrideMode = null) {
-    if (e) e.stopPropagation(); // 6번: 부모 속지 캔버스 클릭으로 이벤트가 퍼져 빈 글쓰기가 생기는 현상 원천 차단
+    if (e) e.stopPropagation();
     const mode = overrideMode || pendingPhotoInsertMode;
     if (!mode) return;
     pendingPhotoInsertIndex = insertIdx;
@@ -1310,7 +1603,7 @@
     singlePhotoResizeState.active = false;
   });
 
-  // ================= 드래그 이동 중 화면 상·하단 자동 스크롤 엔진 =================
+  // ================= 드래그 이동 중 자동 스크롤 =================
   function startAutoScrollLoop(scrollContainerEl, onSwapCheck) {
     stopAutoScrollLoop();
     autoScrollInterval = setInterval(() => {
@@ -1338,7 +1631,7 @@
     }
   }
 
-  // ================= 1페이지당 3개씩 노출되는 손가락 가로 스와이프 캐러셀 =================
+  // ================= 가로 스와이프 캐러셀 =================
   function renderPagedLayoutCarousel(targetKey, selectedId, onClickFnName) {
     const track = document.getElementById(`${targetKey}-layout-carousel`);
     const dotsWrap = document.getElementById(`${targetKey}-layout-dots`);
@@ -1406,7 +1699,7 @@
     renderPagedDots(targetKey);
   }
 
-  // ================= 커스텀 컬러 피커 로직 =================
+  // ================= 커스텀 컬러 피커 =================
   function hsvToHex(h, s, v) {
     let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
     const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0').toUpperCase();
@@ -1574,19 +1867,16 @@
     });
   })();
 
-  // ================= 홈 화면 렌더링 (9번: 홈 노트끼리 겹쳐서 바로 파일로 묶기 + 10번: 겹침 여백 확보) =================
+  // ================= 홈 화면 렌더링 =================
   function renderHome() {
-    const activeProfile = profiles.find(p => p.id === currentProfileId);
-    const profileBadge = document.getElementById('current-profile-badge');
-    if (profileBadge && activeProfile) {
-      profileBadge.textContent = `${activeProfile.name} ▾`;
-    }
+    updateSyncStatusIndicator(isCloudConnected);
 
     const grid = document.getElementById('home-grid');
     const backBtn = document.getElementById('home-back-btn');
     const titleArea = document.getElementById('home-title-area');
     const folderTitleInput = document.getElementById('folder-title-input');
     const folderLinkBtn = document.getElementById('folder-link-header-btn');
+    const folderShareBtn = document.getElementById('folder-share-toggle-btn');
     document.getElementById('trash-count-badge').textContent = trashedNotes.length;
 
     grid.className = `flex-1 overflow-y-auto px-4 pb-28 grid gap-4 content-start no-scrollbar ${
@@ -1601,12 +1891,20 @@
 
       backBtn.classList.remove('hidden');
       folderLinkBtn.classList.remove('hidden');
+      folderShareBtn.classList.remove('hidden');
       titleArea.classList.add('hidden');
       folderTitleInput.classList.remove('hidden');
       folderTitleInput.value = parent.folderName || parent.title || '';
+
+      const allFolderShared = parent.isShared && children.every(c => c.isShared);
+      folderShareBtn.textContent = allFolderShared ? '파일 공유중' : '파일 공유';
+      folderShareBtn.className = allFolderShared
+        ? 'px-2.5 py-1.5 bg-[#EDE9FE] text-purple-950 border border-purple-300 rounded-xl text-xs font-bold shadow-sm active:scale-95'
+        : 'px-2.5 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95';
     } else {
       backBtn.classList.add('hidden');
       folderLinkBtn.classList.add('hidden');
+      folderShareBtn.classList.add('hidden');
       titleArea.classList.remove('hidden');
       folderTitleInput.classList.add('hidden');
       visibleNotes = notes.filter(n => n.parentId === null);
@@ -1618,10 +1916,20 @@
       const previewBlocks = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only' && b.type !== 'single-photo').slice(0, gridCols === 3 ? 3 : 5);
       const theme = getContrastTheme(note.bgColor, '#FFFFFF');
 
+      const hasAnySharedInGroup = isStackedGroup
+        ? (note.isShared || children.some(c => c.isShared))
+        : Boolean(note.isShared);
+
+      const sharedBadgeHTML = hasAnySharedInGroup ? `
+        <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white text-[9px] font-bold shrink-0">
+          공유
+        </span>
+      ` : '';
+
       const cornerMoreBtn = `
         <button type="button"
           onclick="event.stopPropagation(); openCardPopover(event, '${note.id}')"
-          title="복사 · 변환 · 삭제"
+          title="공유 · 복사 · 변환 · 삭제"
           class="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-lg flex flex-col items-center justify-center gap-[2.5px] text-gray-400 hover:text-gray-600 active:bg-black/10 z-20">
           <span class="w-[3px] h-[3px] rounded-full bg-current"></span>
           <span class="w-[3px] h-[3px] rounded-full bg-current"></span>
@@ -1658,10 +1966,13 @@
                 <div style="color:${theme.titleColor};" class="font-bold ${gridCols === 3 ? 'text-xs' : 'text-sm'} truncate">
                   ${displayGroupTitle}
                 </div>
-                <span style="background:${theme.chipBg}; color:${theme.titleColor};"
-                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
-                  +${children.length}
-                </span>
+                <div class="flex items-center gap-1 shrink-0">
+                  ${sharedBadgeHTML}
+                  <span style="background:${theme.chipBg}; color:${theme.titleColor};"
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
+                    +${children.length}
+                  </span>
+                </div>
               </div>
               <div class="space-y-1.5">
                 ${previewBlocks.map(b => `
@@ -1689,8 +2000,11 @@
           onclick="handleCardClick('${note.id}')"
           style="background-color: ${note.bgColor}; --line-color:${theme.lineColor}; --dot-color:${theme.dotColor}; border-color:${theme.borderColor};"
           class="home-note-card relative rounded-2xl p-3.5 pb-6 border shadow-sm cursor-pointer transition active:scale-98 paper-${note.paper}">
-          <div style="color:${theme.titleColor};" class="font-bold ${gridCols === 3 ? 'text-xs' : 'text-sm'} truncate mb-1.5">
-            ${note.title || '제목 없음'}
+          <div class="flex items-center justify-between gap-1 mb-1.5">
+            <div style="color:${theme.titleColor};" class="font-bold ${gridCols === 3 ? 'text-xs' : 'text-sm'} truncate">
+              ${note.title || '제목 없음'}
+            </div>
+            ${sharedBadgeHTML}
           </div>
           <div class="space-y-1.5">
             ${previewBlocks.map(b => `
@@ -1781,7 +2095,6 @@
     const x = e.clientX;
     const y = e.clientY;
 
-    // 기존 병합 하이라이트 초기화
     items.forEach(el => el.classList.remove('merge-target-highlight'));
     homeDragInfo.mergeTargetId = null;
 
@@ -1791,7 +2104,6 @@
       const insideX = x >= rect.left && x <= rect.right;
       const insideY = y >= rect.top && y <= rect.bottom;
       if (insideX && insideY) {
-        // 9번: 최상위 홈에서 카드의 중앙부(30%~70% 영역) 위에 겹쳐 놓으면 '파일로 묶기' 대상 지정, 가장자리면 '순서 이동'
         const centerZoneX = x >= rect.left + rect.width * 0.25 && x <= rect.right - rect.width * 0.25;
         const centerZoneY = y >= rect.top + rect.height * 0.25 && y <= rect.bottom - rect.height * 0.25;
         const draggingNote = notes.find(n => n.id === homeDragInfo.noteId);
@@ -1826,12 +2138,15 @@
       const grid = document.getElementById('home-grid');
       Array.from(grid.children).forEach(el => el.classList.remove('merge-target-highlight'));
 
-      // 9번: 다른 노트(또는 묶음) 중앙에 겹쳐서 놓았을 때 즉시 파일 묶음으로 병합
       if (!activeFolderId && homeDragInfo.mergeTargetId && homeDragInfo.mergeTargetId !== homeDragInfo.noteId) {
         const draggedNote = notes.find(n => n.id === homeDragInfo.noteId);
         const targetNote = notes.find(n => n.id === homeDragInfo.mergeTargetId);
         if (draggedNote && targetNote) {
           draggedNote.parentId = targetNote.id;
+          // 대상 폴더가 공유 상태라면 새로 합쳐진 노트도 자동 공유 동기화
+          if (targetNote.isShared) {
+            draggedNote.isShared = true;
+          }
           if (!targetNote.folderName) {
             targetNote.folderName = targetNote.title || '새 묶음';
           }
@@ -1902,7 +2217,7 @@
     renderHome();
   }
 
-  // ================= 1번: 상단 '이전에 연 노트 탭' & '연결된 노트 칩' 꾹 눌러 순서 이동 =================
+  // ================= 상단 연 노트 탭 & 연결된 노트 칩 순서 이동 =================
   function startChipDrag(e, kind, itemId) {
     if (e.target.closest('button[data-close-tab]')) return;
     clearTimeout(chipDragInfo.timer);
@@ -2069,16 +2384,29 @@
     renderTrashList();
   }
 
-  // ================= 미니 드롭다운 메뉴 & 2번: 복사본을 기존 파일들 뒤에 생성 =================
+  // ================= 미니 드롭다운 메뉴 =================
   function openCardPopover(e, noteId) {
     actionTargetNoteId = noteId;
+    const target = notes.find(n => n.id === noteId);
+    const shareBtn = document.getElementById('popover-share-btn');
+    if (target && shareBtn) {
+      const children = notes.filter(n => n.parentId === target.id);
+      const isFolderCard = !activeFolderId && children.length > 0;
+      const isCurrentlyShared = isFolderCard
+        ? (target.isShared && children.every(c => c.isShared))
+        : Boolean(target.isShared);
+      shareBtn.textContent = isCurrentlyShared
+        ? (isFolderCard ? '파일 공유 끄기' : '공유 끄기')
+        : (isFolderCard ? '파일 공유 켜기' : '공유 켜기');
+    }
+
     const btnRect = e.currentTarget.getBoundingClientRect();
     const backdrop = document.getElementById('card-popover-backdrop');
     const pop = document.getElementById('card-mini-popover');
 
     backdrop.classList.remove('hidden');
 
-    const popW = 120;
+    const popW = 132;
     let left = btnRect.right - popW;
     if (left < 12) left = 12;
     if (left + popW > window.innerWidth - 12) left = window.innerWidth - popW - 12;
@@ -2093,7 +2421,6 @@
     document.getElementById('card-popover-backdrop').classList.add('hidden');
   }
 
-  // 2번: 복사했을 때 복사본이 기존에 생성되어 있는 파일들 뒤(notes.push)에 생성되도록 구현
   function duplicateTargetNote() {
     const origin = notes.find(n => n.id === actionTargetNoteId);
     if (!origin) return;
@@ -2101,6 +2428,7 @@
       id: 'n' + Date.now(),
       title: `${origin.title || '노트'} (복사본)`,
       parentId: origin.parentId,
+      isShared: false, // 복사본은 안전을 위해 기본 비공개로 생성
       bgColor: origin.bgColor,
       paper: origin.paper,
       blocks: origin.blocks.map((b, i) => ({
@@ -2119,6 +2447,7 @@
   function moveTargetNoteToTrash() {
     if (!actionTargetNoteId) return;
     const toTrash = notes.filter(n => n.id === actionTargetNoteId || n.parentId === actionTargetNoteId);
+    toTrash.forEach(n => { n.isShared = false; }); // 휴지통으로 이동 시 공유 자동 해제
     trashedNotes.unshift(...toTrash);
     notes = notes.filter(n => n.id !== actionTargetNoteId && n.parentId !== actionTargetNoteId);
     recentTabIds = recentTabIds.filter(id => id !== actionTargetNoteId);
@@ -2355,6 +2684,21 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
 
+    const drawerShareBtn = document.getElementById('drawer-share-toggle-btn');
+    const drawerShareLabel = document.getElementById('drawer-share-label');
+    const drawerShareBadge = document.getElementById('drawer-share-badge');
+    if (note.isShared) {
+      drawerShareBtn.className = 'w-full py-2.5 px-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-left text-xs font-bold flex justify-between items-center transition';
+      drawerShareLabel.textContent = '공유 중 (클라우드 실시간 동기화)';
+      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-emerald-500 text-white';
+      drawerShareBadge.textContent = 'ON';
+    } else {
+      drawerShareBtn.className = 'w-full py-2.5 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-left text-xs font-bold flex justify-between items-center transition';
+      drawerShareLabel.textContent = '비공개 (내 기기에만 저장)';
+      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-gray-300 text-gray-700';
+      drawerShareBadge.textContent = 'OFF';
+    }
+
     const btnBottom = document.getElementById('drawer-sort-bottom');
     const btnStay = document.getElementById('drawer-sort-stay');
     btnBottom.className = completedSortMode === 'bottom'
@@ -2390,6 +2734,17 @@
     if (!note) return;
     const noteTheme = getContrastTheme(note.bgColor, '#FFFFFF');
 
+    const sharePill = document.getElementById('editor-share-pill');
+    if (sharePill) {
+      if (note.isShared) {
+        sharePill.textContent = '공유중 ON';
+        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-400 bg-emerald-500 text-white transition active:scale-95';
+      } else {
+        sharePill.textContent = '비공개';
+        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-black/15 bg-white/80 text-gray-700 transition active:scale-95';
+      }
+    }
+
     const insertBanner = document.getElementById('photo-insert-guide-bar');
     if (pendingPhotoInsertMode) {
       insertBanner.classList.remove('hidden');
@@ -2407,7 +2762,6 @@
 
     document.getElementById('editor-more-btn').style.color = noteTheme.titleColor;
 
-    // 1번: 이전에 연 노트 탭 (꾹 눌러 순서 변경 가능)
     const activeRootId = note.parentId ? note.parentId : note.id;
     const tabsBar = document.getElementById('recent-tabs-bar');
     const tabsHTML = recentTabIds.map(id => {
@@ -2438,7 +2792,6 @@
       </button>
     `;
 
-    // 1번: 연결된 노트 칩들 (꾹 눌러 순서 변경 가능)
     const groupRootId = note.parentId ? note.parentId : note.id;
     const rootNote = notes.find(n => n.id === groupRootId);
     const siblings = notes.filter(n => n.parentId === groupRootId);
@@ -2486,7 +2839,6 @@
       displayBlocks.sort((a, b) => Number(a.done) - Number(b.done));
     }
 
-    // 6번: 사진 삽입 슬롯 클릭 시 event.stopPropagation()으로 배경 글쓰기 생성 방지
     const renderInsertSlot = (idx) => {
       if (!pendingPhotoInsertMode) return '';
       return `
@@ -2508,13 +2860,11 @@
       resizeAllAutoTextareas();
     });
 
-    // 11번: 하단 첫 번째 버튼 문구 -> "리스트 추가 (틀이름)"
     const lastBlock = [...note.blocks].reverse().find(b => b.type !== 'single-photo');
     const lastType = lastBlock ? lastBlock.type : draftLayout;
     document.getElementById('quick-add-same-btn').textContent = `리스트 추가 (${getLayoutLabel(lastType)})`;
   }
 
-  // ================= 3번 & 8번: 체크리스트 추가 시 빈 메모 숨김 + 메모에서만 지우기 시 삭제 =================
   function handleMainCheckInputKeyDown(e, blockId) {
     if (e.isComposing) return;
     if (e.key === 'Enter') {
@@ -2572,8 +2922,6 @@
     });
   }
 
-  // 8번: 생성된 체크리스트가 있는 경우, 체크리스트 상태에서는 체크박스만 해제(메모로 전환)되고,
-  // 오직 '메모를 입력하세요.'(isPlainMemo: true) 상태에서만 뒤로 지우기 했을 때 해당 항목이 지워짐
   function handleSubCheckKeyDown(e, blockId, subId) {
     if (e.isComposing) return;
     const el = e.currentTarget;
@@ -2595,7 +2943,6 @@
     if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
       e.preventDefault();
 
-      // 아직 체크리스트 상태라면 체크박스만 없애고 '메모를 입력하세요.'(일반 메모)로 전환
       if (!targetSub.isPlainMemo) {
         targetSub.isPlainMemo = true;
         targetSub.done = false;
@@ -2611,7 +2958,6 @@
         return;
       }
 
-      // 이미 '메모를 입력하세요.'(isPlainMemo: true) 상태이고 내용이 비어 있을 때만 지우기 시 항목 삭제
       if (el.value === '') {
         const prevSubId = idx > 0 ? block.subChecks[idx - 1].id : null;
         block.subChecks.splice(idx, 1);
@@ -2676,7 +3022,7 @@
           <div data-sub-id="${sc.id}" class="flex items-start gap-1.5">
             ${sc.isPlainMemo ? '' : `
               <button type="button" onclick="${isPreview ? '' : `toggleSubCheck('${b.id}', '${sc.id}')`}"
-                style="border-color:${theme.checkBorder}; background:${sc.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                style="border-color:${theme.checkBorder}; background:${sc.done ? theme.checkDoneBg : 'transparent'}; color:${sc.checkDoneText};"
                 class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0 mt-1">
                 ${sc.done ? '✓' : ''}
               </button>
@@ -2701,7 +3047,6 @@
     const isTransparent = bgStyle === 'transparent';
     const theme = getContrastTheme(bgStyle, parentBgColor);
     const hasSubChecks = Array.isArray(b.subChecks) && b.subChecks.length > 0;
-    // 3번: 체크리스트가 추가되었을 때 위에 있는 메모가 비어 있으면 숨기고 바로 체크리스트가 보이도록 처리
     const showMemoRow = !hasSubChecks || (b.memo && b.memo.trim().length > 0);
 
     const dragHandle = isPreview ? '' : `
@@ -2730,7 +3075,6 @@
       </button>
     `;
 
-    // 5번: '+ 체크' 대신 깔끔하게 '+'만 표시
     const addPlusBtn = isPreview ? '' : `
       <button type="button" onclick="addSubChecklist('${b.id}', null, false)" title="체크리스트 추가"
         style="background:${theme.chipBg}; color:${theme.subColor};"
@@ -2832,7 +3176,6 @@
       `;
     }
 
-    // 4번: 2분할 슬림바도 글이 길어지면 아랫줄로 자동 줄바꿈되도록 auto-wrap-input 적용
     if (b.type === 'split-slim') {
       return `
         <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
@@ -2840,7 +3183,7 @@
           <div class="pt-1 shrink-0">${dragHandle}</div>
           <div class="flex-1 min-w-0 flex items-start gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
-              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${b.checkDoneText};"
               class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0 mt-1.5">
               ${b.done ? '✓' : ''}
             </button>
@@ -2852,7 +3195,7 @@
           <div style="background:${theme.borderColor};" class="w-[1px] self-stretch shrink-0 mx-0.5"></div>
           <div class="flex-1 min-w-0 flex items-start gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockSecondDone('${b.id}')`}"
-              style="border-color:${theme.checkBorder}; background:${b.done2 ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              style="border-color:${theme.checkBorder}; background:${b.done2 ? theme.checkDoneBg : 'transparent'}; color:${b.checkDoneText};"
               class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0 mt-1.5">
               ${b.done2 ? '✓' : ''}
             </button>
@@ -3017,7 +3360,6 @@
       `;
     }
 
-    // 한줄 슬림바 (길어지면 아랫줄로 자동 줄바꿈)
     return `
       <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
         class="block-item rounded-xl px-3 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} transition-transform">
@@ -3025,7 +3367,7 @@
           <div class="pt-0.5 shrink-0">${dragHandle}</div>
           ${b.isPlainMemo ? '' : `
             <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
-              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+              style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${b.checkDoneText};"
               class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-1.5">
               ${b.done ? '✓' : ''}
             </button>
@@ -3053,7 +3395,7 @@
     }
   }
 
-  // ================= 에디터 내 블록 드래그 순서 변경 + 자동 스크롤 연동 =================
+  // ================= 에디터 내 블록 드래그 순서 변경 =================
   function startImmediateDrag(e, blockId) {
     e.stopPropagation();
     const cardEl = e.currentTarget.closest('.block-item');
@@ -3337,10 +3679,15 @@
 
   function confirmCreateNote() {
     const newId = 'n' + Date.now();
+    // 공유 중인 폴더 안에서 새 노트를 만들면 자동으로 폴더와 함께 공유 설정
+    const parentFolder = activeFolderId ? notes.find(n => n.id === activeFolderId) : null;
+    const inheritShared = Boolean(parentFolder && parentFolder.isShared);
+
     notes.push({
       id: newId,
       title: '',
       parentId: activeFolderId || null,
+      isShared: inheritShared,
       bgColor: draftColor,
       paper: draftPaper,
       blocks: [
@@ -3466,9 +3813,11 @@
 
   function toggleFileLink(targetId) {
     const target = notes.find(n => n.id === targetId);
+    const rootFolder = notes.find(n => n.id === linkingRootId);
     if (!target || !linkingRootId) return;
     target.parentId = target.parentId === linkingRootId ? null : linkingRootId;
     if (target.parentId) {
+      if (rootFolder && rootFolder.isShared) target.isShared = true;
       recentTabIds = recentTabIds.filter(id => id !== target.id);
     }
     saveStateToDB();
@@ -3486,7 +3835,7 @@
     }
   }
 
-  // ================= 갤러리 원본 삭제 후에도 영구 보존되는 사진 첨부 =================
+  // ================= 사진 첨부 & 라이트박스 =================
   function triggerPhotoUpload(blockId) {
     uploadingBlockId = blockId;
     document.getElementById('hidden-file-input').click();
@@ -3498,7 +3847,7 @@
       reader.onload = (ev) => {
         const img = new Image();
         img.onload = () => {
-          const maxDim = 1400;
+          const maxDim = 900;
           let w = img.width;
           let h = img.height;
           if (w > maxDim || h > maxDim) {
@@ -3515,7 +3864,7 @@
           canvas.height = h;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
         };
         img.onerror = () => resolve(ev.target.result);
         img.src = ev.target.result;
@@ -3619,11 +3968,12 @@
     document.getElementById('lightbox-modal').classList.add('hidden');
   }
 
-  // 앱 실행 시 저장된 데이터 및 개인 공간 복원
+  // 앱 실행 시 로컬 비공개 보관함 복원 후, 공유방이 설정된 경우에만 공유 노트 병합
   (async function bootstrapApp() {
-    loadProfilesMeta();
+    loadShareRoomMeta();
     await openAppDB();
-    const saved = await loadStateFromDB(currentProfileId);
+
+    const saved = await loadLocalVault();
     if (saved && Array.isArray(saved.notes)) {
       notes = saved.notes;
       trashedNotes = saved.trashedNotes || [];
@@ -3635,8 +3985,17 @@
       notes = getInitialGuideNotes();
       trashedNotes = [];
       recentTabIds = ['guide_note_1'];
-      saveStateToDB();
+      saveLocalVault();
     }
+
+    if (shareRoomCode && getCleanFirebaseUrl()) {
+      const cloudData = await fetchSharedNotesFromCloud(shareRoomCode);
+      if (cloudData && Array.isArray(cloudData.sharedNotes)) {
+        mergeIncomingSharedNotes(cloudData);
+      }
+      startRealtimeSyncListener(shareRoomCode);
+    }
+
     renderHome();
   })();
 </script>
