@@ -96,7 +96,7 @@
 
     .mini-popover {
       position: fixed;
-      width: 132px;
+      width: 136px;
       background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 14px;
@@ -285,10 +285,10 @@
         </button>
         <div id="home-title-area" class="flex items-center gap-2 min-w-0">
           <h1 id="home-header-title" class="text-xl font-bold text-gray-900 tracking-tight truncate">내 포스트잇</h1>
-          <button onclick="openShareRoomModal()" id="share-room-badge"
+          <button onclick="openSyncHubModal()" id="sync-hub-badge"
             class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95 flex items-center gap-1.5">
             <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-            <span id="share-room-badge-text">공유방 ▾</span>
+            <span id="sync-hub-badge-text">동기화 · 공유 ▾</span>
           </button>
         </div>
         <input id="folder-title-input" type="text" placeholder="묶음 제목 입력..."
@@ -296,7 +296,7 @@
           class="hidden flex-1 min-w-0 text-xl font-bold text-gray-900 bg-white/80 px-2.5 py-1 rounded-xl border border-black/15 outline-none focus:border-purple-400" />
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
-        <button id="folder-share-toggle-btn" onclick="toggleActiveFolderShare()" class="hidden px-2.5 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
+        <button id="folder-share-toggle-btn" onclick="openNoteShareSelector(activeFolderId)" class="hidden px-2.5 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
           파일 공유
         </button>
         <button id="folder-link-header-btn" onclick="openLinkModalForFolder()" class="hidden px-2.5 py-1.5 bg-white text-black border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95">
@@ -345,9 +345,9 @@
         ← 홈
       </button>
       <div class="flex items-center gap-2">
-        <!-- 현재 노트 개별 공유 ON/OFF 빠른 토글 버튼 -->
-        <button onclick="toggleCurrentNoteShare()" id="editor-share-pill"
-          class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition active:scale-95">
+        <!-- 현재 노트 다중 공유 설정 버튼 -->
+        <button onclick="openNoteShareSelector(currentNoteId)" id="editor-share-pill"
+          class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition active:scale-95 max-w-[140px] truncate">
           비공개
         </button>
         <button onclick="toggleAllChecklists()" id="all-check-square" title="전체 체크 / 해제"
@@ -404,13 +404,13 @@
         <button onclick="closeEditorDrawer()" class="w-7 h-7 rounded-lg bg-[#EDE9FE] text-xs font-bold text-purple-950">✕</button>
       </div>
 
-      <!-- 개별 공유 스위치 -->
+      <!-- 다중 공유방 설정 버튼 -->
       <div class="mb-5">
-        <div class="text-xs font-bold text-gray-500 mb-2">공유 설정 (이 노트만 동기화)</div>
-        <button onclick="toggleCurrentNoteShare()" id="drawer-share-toggle-btn"
+        <div class="text-xs font-bold text-gray-500 mb-2">공유 대상 설정 (다중 방 가능)</div>
+        <button onclick="closeEditorDrawer(); openNoteShareSelector(currentNoteId);" id="drawer-share-toggle-btn"
           class="w-full py-2.5 px-3.5 rounded-xl border text-left text-xs font-bold flex justify-between items-center transition">
-          <span id="drawer-share-label">현재 비공개 (내 기기만 저장)</span>
-          <span id="drawer-share-badge" class="px-2 py-0.5 rounded-md text-[11px]">OFF</span>
+          <span id="drawer-share-label" class="truncate pr-2">비공개 (내 보관함 전용)</span>
+          <span id="drawer-share-badge" class="px-2 py-0.5 rounded-md text-[11px] shrink-0">설정 →</span>
         </button>
       </div>
 
@@ -526,29 +526,79 @@
     </div>
   </div>
 
-  <!-- ================= 5. 공유방 연결 설정 모달 ================= -->
-  <div id="share-room-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-5" onclick="closeShareRoomModal(event)">
-    <div class="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
-      <h3 class="text-base font-bold text-gray-900 mb-1">공유방 연결 설정</h3>
-      <p class="text-xs text-gray-500 mb-3 leading-relaxed">
-        모든 노트는 기본적으로 <strong>내 기기에만 비공개 저장</strong>됩니다.<br/>
-        상대방과 같은 공유방 이름을 입력하고, 각 노트·파일 메뉴에서 <strong>[공유 켜기]</strong>를 누른 항목만 실시간 동기화됩니다.
-      </p>
-      <div id="sync-status-banner" class="text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-3">
+  <!-- ================= 5. 내 기기 동기화 & 다중 공유방 관리 모달 ================= -->
+  <div id="sync-hub-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-4" onclick="closeSyncHubModal(event)">
+    <div class="w-full max-w-[380px] bg-white rounded-3xl p-5 shadow-2xl max-h-[88dvh] overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-base font-bold text-gray-900">내 기기 동기화 및 공유방 관리</h3>
+        <button onclick="closeSyncHubModal()" class="w-7 h-7 rounded-lg bg-gray-100 text-xs font-bold text-gray-600">✕</button>
+      </div>
+
+      <div id="sync-status-banner" class="text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-4">
         연결 상태 확인 중...
       </div>
 
-      <div class="flex gap-2 mb-3">
-        <input id="share-room-input" type="text" placeholder="둘만 아는 공유방 이름 입력"
-          class="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
-        <button onclick="saveShareRoomCode()" class="px-4 py-2.5 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0">
-          연결
+      <!-- 1) 내 개인 백업 코드 (크롬·네이버·다른 기기 연동용) -->
+      <div class="p-3.5 rounded-2xl bg-[#F5F3FF] border border-[#DDD6FE] mb-4">
+        <div class="text-xs font-bold text-purple-950 mb-1">1. 내 개인 동기화 코드 (비공개 노트 연동)</div>
+        <p class="text-[11px] text-purple-900/75 mb-2.5 leading-relaxed">
+          크롬·네이버 앱이나 다른 기기에서도 내 비공개 노트를 똑같이 보려면 나만의 비밀 코드를 입력하세요. (미입력 시 현재 브라우저에만 저장)
+        </p>
+        <div class="flex gap-2">
+          <input id="personal-vault-input" type="text" placeholder="예: sera_my_0419"
+            class="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-400" />
+          <button onclick="savePersonalVaultCode()" class="px-3.5 py-2 bg-purple-700 text-white rounded-xl text-xs font-bold shrink-0 active:scale-95">
+            적용
+          </button>
+        </div>
+        <button id="clear-personal-vault-btn" onclick="clearPersonalVaultCode()" class="hidden mt-2 text-[11px] font-bold text-purple-800 underline">
+          개인 코드 해제 (현재 브라우저 전용으로 전환)
         </button>
       </div>
 
-      <button id="disconnect-share-btn" onclick="disconnectShareRoom()" class="hidden w-full py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold">
-        공유방 연결 해제 (내 노트만 보기)
-      </button>
+      <!-- 2) 참여한 공유방 목록 (가족방, 친구방 등 다중 관리) -->
+      <div class="p-3.5 rounded-2xl bg-gray-50 border border-gray-200">
+        <div class="text-xs font-bold text-gray-900 mb-1">2. 참여한 공유방 목록 (여러 방 추가 가능)</div>
+        <p class="text-[11px] text-gray-500 mb-2.5 leading-relaxed">
+          상대방과 나눌 방 이름을 추가한 뒤, 각 노트의 점 3개(⋮) → <strong>[공유 설정]</strong>에서 원하는 방을 선택하세요.
+        </p>
+        <div class="flex gap-2 mb-3">
+          <input id="new-shared-room-input" type="text" placeholder="새 공유방 이름 (예: 가족방, 친구방)"
+            class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
+          <button onclick="addSharedRoom()" class="px-3.5 py-2 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0 active:scale-95">
+            + 추가
+          </button>
+        </div>
+        <div id="joined-rooms-list" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 5-2. 개별 노트·파일 다중 공유방 선택 바텀시트 ================= -->
+  <div id="note-share-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-end justify-center" onclick="closeNoteShareSelector(event)">
+    <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl max-h-[80dvh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
+      <h3 id="note-share-modal-title" class="text-base font-bold text-gray-900 mb-1">공유할 방 선택 (중복 선택 가능)</h3>
+      <p id="note-share-modal-desc" class="text-xs text-gray-500 mb-3">선택한 모든 방에 이 노트가 실시간으로 공유됩니다. 모두 해제하면 비공개로 전환됩니다.</p>
+
+      <div class="flex gap-2 mb-3">
+        <input id="quick-add-room-in-selector" type="text" placeholder="새 방 이름 바로 추가 (예: 친구방)"
+          class="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300" />
+        <button onclick="quickAddRoomAndAssign()" class="px-3.5 py-2 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold shrink-0">
+          + 추가 후 체크
+        </button>
+      </div>
+
+      <div id="note-share-rooms-checklist" class="flex-1 overflow-y-auto space-y-2 mb-4 no-scrollbar"></div>
+
+      <div class="flex gap-2">
+        <button onclick="setTargetNotePrivate()" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold">
+          전체 해제 (비공개)
+        </button>
+        <button onclick="closeNoteShareSelector()" class="flex-1 py-3 bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold">
+          완료
+        </button>
+      </div>
     </div>
   </div>
 
@@ -596,11 +646,11 @@
     </div>
   </div>
 
-  <!-- ================= 1-3. 점 3개(⋮) 미니 팝오버 메뉴 (개별 노트/파일 공유 ON/OFF 포함) ================= -->
+  <!-- ================= 1-3. 점 3개(⋮) 미니 팝오버 메뉴 ================= -->
   <div id="card-popover-backdrop" class="hidden fixed inset-0 z-40" onclick="closeCardPopover()">
     <div id="card-mini-popover" class="mini-popover" onclick="event.stopPropagation()">
-      <button type="button" id="popover-share-btn" onclick="toggleTargetNoteShare()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-purple-900">
-        공유 켜기
+      <button type="button" id="popover-share-btn" onclick="openShareSelectorFromPopover()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-purple-900">
+        공유 설정
       </button>
       <div class="my-1 border-t border-gray-100"></div>
       <button type="button" onclick="duplicateTargetNote()" class="w-full py-2 px-3 rounded-lg hover:bg-[#F5F3FF] text-left text-xs font-bold text-gray-800">
@@ -657,79 +707,112 @@
 
 <script>
   // =========================================================================
-  // [실시간 공유 설정] 아래 따옴표 안에 Firebase Realtime Database URL을 넣어주세요!
-  // 예: const FIREBASE_DB_URL = "https://postit-share-default-rtdb.firebaseio.com";
+  // [필수 설정] 아래 따옴표 안에 Firebase Realtime Database URL을 넣어주세요!
+  // 예: const FIREBASE_DB_URL = "https://checklist-xxxxx-default-rtdb.firebaseio.com";
   // =========================================================================
   const FIREBASE_DB_URL = "https://checklist-f6f5b-default-rtdb.firebaseio.com/";
 
-  const DB_NAME = 'PostitHybridApp_DB_v8';
+  const DB_NAME = 'PostitHybridApp_DB_v9';
   const STORE_NAME = 'localPersonalVault';
-  const LOCAL_VAULT_KEY = 'personal_main_vault';
-  const SHARE_ROOM_META_KEY = 'postit_share_room_code_v8';
+  const LOCAL_VAULT_KEY = 'personal_main_vault_v9';
+  const SYNC_META_KEY = 'postit_sync_meta_v9';
   let dbInstance = null;
 
-  let shareRoomCode = '';
+  // 내 기기 동기화 코드 (비어있으면 로컬 브라우저 전용, 입력 시 크롬/네이버/다른 기기 실시간 동기화)
+  let personalVaultCode = '';
+  // 내가 입장한 다중 공유방 목록 (예: ['가족방', '친구방'])
+  let joinedSharedRooms = [];
 
   const CLIENT_INSTANCE_ID = 'client_' + Math.random().toString(36).slice(2, 10);
-  let lastKnownCloudTimestamp = 0;
+  let lastPersonalCloudTs = 0;
+  let lastRoomCloudTsMap = {};
   let cloudSaveDebounceTimer = null;
-  let cloudEventSource = null;
+  let activeEventSources = {};
   let cloudPollingTimer = null;
   let isCloudConnected = false;
+
+  let shareSelectorTargetNoteId = null;
 
   function getCleanFirebaseUrl() {
     return (FIREBASE_DB_URL || '').trim().replace(/\/+$/, '');
   }
 
-  function getCloudRoomKey(roomCode) {
-    const clean = (roomCode || '').trim();
+  function encodeFirebaseKey(str) {
+    const clean = (str || '').trim();
     return encodeURIComponent(clean).replace(/[.#$\[\]]/g, '_');
   }
 
-  function loadShareRoomMeta() {
+  function loadSyncMeta() {
     try {
-      shareRoomCode = localStorage.getItem(SHARE_ROOM_META_KEY) || '';
+      const raw = localStorage.getItem(SYNC_META_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        personalVaultCode = parsed.personalVaultCode || '';
+        joinedSharedRooms = Array.isArray(parsed.joinedSharedRooms) ? parsed.joinedSharedRooms : [];
+      }
     } catch (_) {}
   }
 
-  function saveShareRoomMeta() {
+  function saveSyncMeta() {
     try {
-      localStorage.setItem(SHARE_ROOM_META_KEY, shareRoomCode);
+      localStorage.setItem(SYNC_META_KEY, JSON.stringify({
+        personalVaultCode,
+        joinedSharedRooms
+      }));
     } catch (_) {}
+  }
+
+  function getNoteSharedRooms(note) {
+    if (!note) return [];
+    if (Array.isArray(note.sharedRooms)) return note.sharedRooms;
+    return [];
   }
 
   function updateSyncStatusIndicator(connected, customText) {
     isCloudConnected = connected;
     const dot = document.getElementById('sync-status-dot');
-    const badgeText = document.getElementById('share-room-badge-text');
+    const badgeText = document.getElementById('sync-hub-badge-text');
     const banner = document.getElementById('sync-status-banner');
-    const disconnectBtn = document.getElementById('disconnect-share-btn');
+    const clearVaultBtn = document.getElementById('clear-personal-vault-btn');
+
+    const hasAnyCloudTarget = Boolean(personalVaultCode || joinedSharedRooms.length > 0);
 
     if (badgeText) {
-      badgeText.textContent = shareRoomCode ? `공유: ${shareRoomCode} ▾` : '공유방 연결 ▾';
+      if (personalVaultCode && joinedSharedRooms.length > 0) {
+        badgeText.textContent = `내동기화 · 방 ${joinedSharedRooms.length}개 ▾`;
+      } else if (personalVaultCode) {
+        badgeText.textContent = `내동기화 ON ▾`;
+      } else if (joinedSharedRooms.length > 0) {
+        badgeText.textContent = `공유방 ${joinedSharedRooms.length}개 ▾`;
+      } else {
+        badgeText.textContent = `동기화 · 공유 ▾`;
+      }
     }
+
     if (dot) {
       dot.className = `w-1.5 h-1.5 rounded-full ${
-        !shareRoomCode ? 'bg-gray-400' : connected ? 'bg-emerald-500' : 'bg-amber-400'
+        !hasAnyCloudTarget ? 'bg-gray-400' : connected ? 'bg-emerald-500' : 'bg-amber-400'
       }`;
     }
-    if (disconnectBtn) {
-      if (shareRoomCode) disconnectBtn.classList.remove('hidden');
-      else disconnectBtn.classList.add('hidden');
+
+    if (clearVaultBtn) {
+      if (personalVaultCode) clearVaultBtn.classList.remove('hidden');
+      else clearVaultBtn.classList.add('hidden');
     }
+
     if (banner) {
       if (!getCleanFirebaseUrl()) {
-        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-3';
-        banner.textContent = '로컬 전용 모드 (코드 상단 FIREBASE_DB_URL 입력 시 공유 가능)';
-      } else if (!shareRoomCode) {
-        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-3';
-        banner.textContent = '공유방이 연결되지 않았습니다 (현재 모든 노트 비공개)';
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-4';
+        banner.textContent = '로컬 전용 모드 (코드 상단 FIREBASE_DB_URL 입력 시 동기화 활성)';
+      } else if (!hasAnyCloudTarget) {
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-4';
+        banner.textContent = '현재 기기 단독 사용 중 (개인 코드나 공유방을 설정하세요)';
       } else if (connected) {
-        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3';
-        banner.textContent = customText || `실시간 공유방 연결됨: "${shareRoomCode}"`;
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 mb-4';
+        banner.textContent = customText || `클라우드 실시간 동기화 연결됨`;
       } else {
-        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 mb-3';
-        banner.textContent = customText || '공유방 서버 연결 중...';
+        banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 mb-4';
+        banner.textContent = customText || '클라우드 연결 확인 중...';
       }
     }
   }
@@ -758,7 +841,7 @@
         id: 'guide_note_1',
         title: '앱 사용 설명서',
         parentId: null,
-        isShared: false,
+        sharedRooms: [],
         bgColor: '#FEF9C3',
         paper: 'grid',
         blocks: [
@@ -767,7 +850,7 @@
             type: 'plain-text',
             done: false,
             title: '',
-            memo: '1. 모든 노트는 기본 비공개(내 기기 전용)이며, 점 3개(⋮) 메뉴에서 [공유 켜기]를 누른 노트·파일만 공유됩니다.',
+            memo: '1. 상단 [동기화 · 공유]에서 개인 동기화 코드를 넣으면 같은 폰 다른 브라우저나 새 폰에서도 내 노트가 이어집니다.',
             cardBg: 'transparent',
             photos: [],
             subChecks: []
@@ -776,7 +859,7 @@
             id: 'gb_2',
             type: 'left-photo',
             done: false,
-            title: '2. 글이 길어지면 아랫줄로 자동 줄바꿈되고 사진도 함께 늘어납니다',
+            title: '2. 각 노트의 점 3개(⋮) → [공유 설정]에서 가족방·친구방 등 여러 방에 동시 공유할 수 있습니다',
             memo: '우측 + 버튼으로 하위 체크리스트를 바로 추가할 수 있습니다.',
             cardBg: 'rgba(255,255,255,0.92)',
             photos: [],
@@ -818,7 +901,8 @@
       recentTabIds,
       baseBgColors,
       baseBlockColors,
-      cpRecentColors
+      cpRecentColors,
+      joinedSharedRooms
     };
     if (dbInstance) {
       try {
@@ -827,7 +911,7 @@
       } catch (_) {}
     }
     try {
-      localStorage.setItem('postit_local_vault_backup_v8', JSON.stringify(localPayload));
+      localStorage.setItem('postit_local_vault_backup_v9', JSON.stringify(localPayload));
     } catch (_) {}
   }
 
@@ -835,7 +919,7 @@
     return new Promise((resolve) => {
       const tryLocalFallback = () => {
         try {
-          const raw = localStorage.getItem('postit_local_vault_backup_v8');
+          const raw = localStorage.getItem('postit_local_vault_backup_v9');
           resolve(raw ? JSON.parse(raw) : null);
         } catch (_) {
           resolve(null);
@@ -860,104 +944,127 @@
     });
   }
 
-  // 비공개 노트는 절대 서버로 나가지 않고, 오직 isShared === true 인 노트/파일만 필터링하여 클라우드로 전송
-  function saveStateToDB(skipCloudPush = false) {
+  // 상태 변경 시 로컬 저장 + (개인 동기화 코드가 있으면 개인 보관함 동기화 + 각 공유방별 해당 노트만 동기화)
+  function saveStateToDB(skipCloudPush = false, specificRoomsToSync = null) {
     saveLocalVault();
 
-    if (!skipCloudPush && getCleanFirebaseUrl() && shareRoomCode) {
-      const nowTs = Date.now();
-      lastKnownCloudTimestamp = nowTs;
-      clearTimeout(cloudSaveDebounceTimer);
-      cloudSaveDebounceTimer = setTimeout(() => {
-        pushSharedNotesOnlyToCloud(nowTs);
-      }, 280);
-    }
+    if (skipCloudPush || !getCleanFirebaseUrl()) return;
+
+    const nowTs = Date.now();
+    clearTimeout(cloudSaveDebounceTimer);
+    cloudSaveDebounceTimer = setTimeout(() => {
+      if (personalVaultCode) {
+        lastPersonalCloudTs = nowTs;
+        pushPersonalVaultToCloud(nowTs);
+      }
+      const roomsToUpdate = specificRoomsToSync || joinedSharedRooms;
+      roomsToUpdate.forEach(roomName => {
+        lastRoomCloudTsMap[roomName] = nowTs;
+        pushSingleRoomToCloud(roomName, nowTs);
+      });
+    }, 280);
   }
 
-  async function pushSharedNotesOnlyToCloud(timestamp = Date.now()) {
+  async function pushPersonalVaultToCloud(timestamp = Date.now()) {
     const baseUrl = getCleanFirebaseUrl();
-    if (!baseUrl || !shareRoomCode) return;
+    if (!baseUrl || !personalVaultCode) return;
 
-    // 1) isShared가 true인 노트만 추출 (비공개 노트는 물리적으로 전송 차단)
-    const sharedNotesList = notes.filter(n => n.isShared === true).map(n => {
-      // 만약 자식 노트만 단독 공유된 경우, 상대방 화면에서 미아(고아) 노트가 되지 않도록 parentId가 공유 목록에 없으면 최상위로 노출 처리
-      const hasSharedParent = n.parentId && notes.some(p => p.id === n.parentId && p.isShared === true);
-      return {
-        ...n,
-        sharedParentId: hasSharedParent ? n.parentId : null
-      };
-    });
-
-    const cloudPayload = {
-      sharedNotes: sharedNotesList,
+    // 내 기기들끼리 공유할 개인 전용 데이터 (비공개 노트 + 내가 참여한 방 목록)
+    const privateNotes = notes.filter(n => getNoteSharedRooms(n).length === 0);
+    const payload = {
+      privateNotes,
+      trashedNotes,
+      recentTabIds,
+      joinedSharedRooms,
+      baseBgColors,
+      baseBlockColors,
+      cpRecentColors,
       updatedAt: timestamp,
       updatedBy: CLIENT_INSTANCE_ID
     };
 
-    const roomKey = getCloudRoomKey(shareRoomCode);
+    const key = encodeFirebaseKey(personalVaultCode);
     try {
-      const res = await fetch(`${baseUrl}/shared_rooms/${roomKey}.json`, {
+      const res = await fetch(`${baseUrl}/personal_vaults/${key}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cloudPayload)
+        body: JSON.stringify(payload)
       });
-      if (res.ok) {
-        updateSyncStatusIndicator(true);
-      }
+      if (res.ok) updateSyncStatusIndicator(true);
     } catch (_) {
-      updateSyncStatusIndicator(false, '오프라인 상태 (로컬에 안전 저장됨)');
+      updateSyncStatusIndicator(false, '오프라인 상태 (로컬 저장됨)');
     }
   }
 
-  async function fetchSharedNotesFromCloud(roomCode) {
+  async function pushSingleRoomToCloud(roomName, timestamp = Date.now()) {
     const baseUrl = getCleanFirebaseUrl();
-    if (!baseUrl || !roomCode) return null;
-    const roomKey = getCloudRoomKey(roomCode);
+    if (!baseUrl || !roomName) return;
+
+    // 오직 해당 roomName이 sharedRooms에 포함된 노트만 추출하여 전송
+    const roomNotes = notes.filter(n => getNoteSharedRooms(n).includes(roomName)).map(n => {
+      const hasSharedParentInSameRoom = n.parentId && notes.some(
+        p => p.id === n.parentId && getNoteSharedRooms(p).includes(roomName)
+      );
+      return {
+        ...n,
+        roomParentId: hasSharedParentInSameRoom ? n.parentId : null
+      };
+    });
+
+    const payload = {
+      roomNotes,
+      updatedAt: timestamp,
+      updatedBy: CLIENT_INSTANCE_ID
+    };
+
+    const roomKey = encodeFirebaseKey(roomName);
     try {
-      const res = await fetch(`${baseUrl}/shared_rooms/${roomKey}.json`);
+      const res = await fetch(`${baseUrl}/multi_rooms/${roomKey}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) updateSyncStatusIndicator(true);
+    } catch (_) {
+      updateSyncStatusIndicator(false, '오프라인 상태 (로컬 저장됨)');
+    }
+  }
+
+  async function fetchPersonalVaultFromCloud(code) {
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !code) return null;
+    try {
+      const res = await fetch(`${baseUrl}/personal_vaults/${encodeFirebaseKey(code)}.json`);
       if (!res.ok) return null;
       const data = await res.json();
       updateSyncStatusIndicator(true);
       return data;
     } catch (_) {
-      updateSyncStatusIndicator(false);
       return null;
     }
   }
 
-  // 클라우드에서 받은 공유 노트들과 내 기기의 비공개 노트들을 한 화면에서 자연스럽게 병합
-  function mergeIncomingSharedNotes(cloudData) {
-    if (!cloudData || !Array.isArray(cloudData.sharedNotes)) return;
-    if (cloudData.updatedBy === CLIENT_INSTANCE_ID) return;
-    if (cloudData.updatedAt && cloudData.updatedAt <= lastKnownCloudTimestamp) return;
+  async function fetchSingleRoomFromCloud(roomName) {
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !roomName) return null;
+    try {
+      const res = await fetch(`${baseUrl}/multi_rooms/${encodeFirebaseKey(roomName)}.json`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      updateSyncStatusIndicator(true);
+      return data;
+    } catch (_) {
+      return null;
+    }
+  }
 
-    lastKnownCloudTimestamp = cloudData.updatedAt || Date.now();
-
+  function preserveFocusAndRerender() {
     const activeEl = document.activeElement;
     const activeBlockId = activeEl?.closest('[data-block-id]')?.getAttribute('data-block-id') || null;
     const activeSubId = activeEl?.closest('[data-sub-id]')?.getAttribute('data-sub-id') || null;
     const activeRole = activeEl?.getAttribute('data-role') || null;
     const activeId = activeEl?.id || null;
     const selStart = typeof activeEl?.selectionStart === 'number' ? activeEl.selectionStart : null;
-
-    // 내 기기의 비공개 노트들은 그대로 보존하고, 공유 상태였던 노트 목록만 최신 클라우드 데이터로 교체
-    const myPrivateNotes = notes.filter(n => !n.isShared);
-    const incomingShared = cloudData.sharedNotes.map(sn => {
-      // 내 기기에 원래 부모 폴더가 비공개로 존재하는 경우라면 로컬에서의 부모-자식 관계 유지
-      const localExisting = notes.find(localN => localN.id === sn.id);
-      const preservedParentId = (localExisting && localExisting.parentId && myPrivateNotes.some(p => p.id === localExisting.parentId))
-        ? localExisting.parentId
-        : (sn.sharedParentId || null);
-
-      return {
-        ...sn,
-        isShared: true,
-        parentId: preservedParentId
-      };
-    });
-
-    notes = [...myPrivateNotes, ...incomingShared];
-    saveLocalVault();
 
     const isEditorOpen = !document.getElementById('editor-view').classList.contains('hidden');
     if (isEditorOpen) {
@@ -988,171 +1095,426 @@
     }
   }
 
-  function startRealtimeSyncListener(roomCode) {
-    stopRealtimeSyncListener();
-    const baseUrl = getCleanFirebaseUrl();
-    if (!baseUrl || !roomCode) {
-      updateSyncStatusIndicator(false);
-      return;
+  function applyIncomingPersonalVault(data) {
+    if (!data || !Array.isArray(data.privateNotes)) return;
+    if (data.updatedBy === CLIENT_INSTANCE_ID) return;
+    if (data.updatedAt && data.updatedAt <= lastPersonalCloudTs) return;
+
+    lastPersonalCloudTs = data.updatedAt || Date.now();
+
+    const currentSharedNotes = notes.filter(n => getNoteSharedRooms(n).length > 0);
+    const incomingPrivate = data.privateNotes.map(pn => ({ ...pn, sharedRooms: [] }));
+
+    notes = [...incomingPrivate, ...currentSharedNotes];
+    if (Array.isArray(data.trashedNotes)) trashedNotes = data.trashedNotes;
+    if (Array.isArray(data.recentTabIds)) recentTabIds = data.recentTabIds;
+    if (Array.isArray(data.baseBgColors)) baseBgColors = data.baseBgColors;
+    if (Array.isArray(data.baseBlockColors)) baseBlockColors = data.baseBlockColors;
+    if (Array.isArray(data.cpRecentColors)) cpRecentColors = data.cpRecentColors;
+
+    // 다른 내 기기에서 새로 입장한 공유방이 있다면 자동으로 구독 목록에 추가
+    if (Array.isArray(data.joinedSharedRooms)) {
+      let roomsChanged = false;
+      data.joinedSharedRooms.forEach(r => {
+        if (!joinedSharedRooms.includes(r)) {
+          joinedSharedRooms.push(r);
+          roomsChanged = true;
+        }
+      });
+      if (roomsChanged) {
+        saveSyncMeta();
+        rebuildAllCloudListeners();
+      }
     }
 
-    const roomKey = getCloudRoomKey(roomCode);
-    const streamUrl = `${baseUrl}/shared_rooms/${roomKey}.json`;
-
-    if (window.EventSource) {
-      try {
-        cloudEventSource = new EventSource(streamUrl);
-        cloudEventSource.addEventListener('put', (e) => {
-          updateSyncStatusIndicator(true);
-          try {
-            const parsed = JSON.parse(e.data);
-            if (parsed && parsed.path === '/' && parsed.data) {
-              mergeIncomingSharedNotes(parsed.data);
-            } else if (parsed && parsed.path !== '/') {
-              fetchSharedNotesFromCloud(roomCode).then(full => {
-                if (full) mergeIncomingSharedNotes(full);
-              });
-            }
-          } catch (_) {}
-        });
-        cloudEventSource.onerror = () => {
-          updateSyncStatusIndicator(false, '재연결 시도 중...');
-        };
-      } catch (_) {}
-    }
-
-    cloudPollingTimer = setInterval(async () => {
-      if (document.hidden) return;
-      const latest = await fetchSharedNotesFromCloud(roomCode);
-      if (latest) mergeIncomingSharedNotes(latest);
-    }, 3500);
+    saveLocalVault();
+    preserveFocusAndRerender();
   }
 
-  function stopRealtimeSyncListener() {
-    if (cloudEventSource) {
-      cloudEventSource.close();
-      cloudEventSource = null;
-    }
+  function applyIncomingRoomData(roomName, data) {
+    if (!data || !Array.isArray(data.roomNotes)) return;
+    if (data.updatedBy === CLIENT_INSTANCE_ID) return;
+    const prevTs = lastRoomCloudTsMap[roomName] || 0;
+    if (data.updatedAt && data.updatedAt <= prevTs) return;
+
+    lastRoomCloudTsMap[roomName] = data.updatedAt || Date.now();
+
+    const incomingIds = new Set(data.roomNotes.map(rn => rn.id));
+
+    // 기존 notes에서 이 방(roomName)에만 속해 있던 노트는 제거/갱신, 다른 방에도 속해 있으면 방 태그만 조정
+    const nextNotes = [];
+    notes.forEach(existing => {
+      const rooms = getNoteSharedRooms(existing);
+      if (!rooms.includes(roomName)) {
+        nextNotes.push(existing);
+      } else if (!incomingIds.has(existing.id)) {
+        // 상대방이 이 방에서 해당 노트를 삭제/공유해제했을 경우
+        const remainingRooms = rooms.filter(r => r !== roomName);
+        if (remainingRooms.length > 0) {
+          nextNotes.push({ ...existing, sharedRooms: remainingRooms });
+        }
+      }
+    });
+
+    // 수신된 방 노트 병합 (다중 공유방 태그 보존)
+    data.roomNotes.forEach(rn => {
+      const localMatch = notes.find(n => n.id === rn.id);
+      const mergedRoomsSet = new Set([
+        ...(localMatch ? getNoteSharedRooms(localMatch) : []),
+        ...(Array.isArray(rn.sharedRooms) ? rn.sharedRooms : []),
+        roomName
+      ]);
+
+      const preservedParentId = (localMatch && localMatch.parentId && nextNotes.some(p => p.id === localMatch.parentId))
+        ? localMatch.parentId
+        : (rn.roomParentId || null);
+
+      nextNotes.push({
+        ...rn,
+        sharedRooms: Array.from(mergedRoomsSet),
+        parentId: preservedParentId
+      });
+    });
+
+    notes = nextNotes;
+    saveLocalVault();
+    preserveFocusAndRerender();
+  }
+
+  function stopAllCloudListeners() {
+    Object.values(activeEventSources).forEach(es => {
+      try { es.close(); } catch (_) {}
+    });
+    activeEventSources = {};
     if (cloudPollingTimer) {
       clearInterval(cloudPollingTimer);
       cloudPollingTimer = null;
     }
   }
 
-  // ================= 공유방 연결 모달 =================
-  function openShareRoomModal() {
-    document.getElementById('share-room-input').value = shareRoomCode;
+  function rebuildAllCloudListeners() {
+    stopAllCloudListeners();
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || (!personalVaultCode && joinedSharedRooms.length === 0)) {
+      updateSyncStatusIndicator(false);
+      return;
+    }
+
+    if (window.EventSource) {
+      // 1) 개인 보관함 실시간 스트림
+      if (personalVaultCode) {
+        const pUrl = `${baseUrl}/personal_vaults/${encodeFirebaseKey(personalVaultCode)}.json`;
+        try {
+          const es = new EventSource(pUrl);
+          es.addEventListener('put', (e) => {
+            updateSyncStatusIndicator(true);
+            try {
+              const parsed = JSON.parse(e.data);
+              if (parsed && parsed.path === '/' && parsed.data) applyIncomingPersonalVault(parsed.data);
+              else fetchPersonalVaultFromCloud(personalVaultCode).then(d => d && applyIncomingPersonalVault(d));
+            } catch (_) {}
+          });
+          activeEventSources['__personal__'] = es;
+        } catch (_) {}
+      }
+
+      // 2) 참여한 모든 다중 공유방 실시간 스트림
+      joinedSharedRooms.forEach(roomName => {
+        const rUrl = `${baseUrl}/multi_rooms/${encodeFirebaseKey(roomName)}.json`;
+        try {
+          const es = new EventSource(rUrl);
+          es.addEventListener('put', (e) => {
+            updateSyncStatusIndicator(true);
+            try {
+              const parsed = JSON.parse(e.data);
+              if (parsed && parsed.path === '/' && parsed.data) applyIncomingRoomData(roomName, parsed.data);
+              else fetchSingleRoomFromCloud(roomName).then(d => d && applyIncomingRoomData(roomName, d));
+            } catch (_) {}
+          });
+          activeEventSources[`room_${roomName}`] = es;
+        } catch (_) {}
+      });
+    }
+
+    // 절전 복귀 및 안정성을 위한 보조 주기 폴링
+    cloudPollingTimer = setInterval(async () => {
+      if (document.hidden) return;
+      if (personalVaultCode) {
+        const pData = await fetchPersonalVaultFromCloud(personalVaultCode);
+        if (pData) applyIncomingPersonalVault(pData);
+      }
+      for (const roomName of joinedSharedRooms) {
+        const rData = await fetchSingleRoomFromCloud(roomName);
+        if (rData) applyIncomingRoomData(roomName, rData);
+      }
+    }, 4000);
+  }
+
+  // ================= 동기화 허브 모달 (개인 코드 + 다중 방 관리) =================
+  function openSyncHubModal() {
+    document.getElementById('personal-vault-input').value = personalVaultCode;
+    renderJoinedRoomsList();
     updateSyncStatusIndicator(isCloudConnected);
-    document.getElementById('share-room-modal').classList.remove('hidden');
+    document.getElementById('sync-hub-modal').classList.remove('hidden');
   }
 
-  function closeShareRoomModal(e) {
-    if (!e || e.target.id === 'share-room-modal') {
-      document.getElementById('share-room-modal').classList.add('hidden');
+  function closeSyncHubModal(e) {
+    if (!e || e.target.id === 'sync-hub-modal') {
+      document.getElementById('sync-hub-modal').classList.add('hidden');
     }
   }
 
-  async function saveShareRoomCode() {
-    const val = document.getElementById('share-room-input').value.trim();
+  function renderJoinedRoomsList() {
+    const listEl = document.getElementById('joined-rooms-list');
+    if (joinedSharedRooms.length === 0) {
+      listEl.innerHTML = `<div class="text-[11px] text-gray-400 py-2 text-center">추가된 공유방이 없습니다.</div>`;
+      return;
+    }
+    listEl.innerHTML = joinedSharedRooms.map(room => `
+      <div class="flex justify-between items-center px-3 py-2 bg-white rounded-xl border border-gray-200">
+        <span class="text-xs font-bold text-gray-800 truncate">${room}</span>
+        <button onclick="leaveSharedRoom('${room.replace(/'/g, "\\'")}')" class="text-[11px] font-bold text-red-500 px-2 py-0.5 rounded-lg hover:bg-red-50 shrink-0">
+          나가기
+        </button>
+      </div>
+    `).join('');
+  }
+
+  async function savePersonalVaultCode() {
+    const val = document.getElementById('personal-vault-input').value.trim();
     if (!val) return;
-    shareRoomCode = val;
-    saveShareRoomMeta();
-    lastKnownCloudTimestamp = 0;
-
-    // 기존 방에 상대방이 올려둔 공유 노트가 있으면 가져와서 병합
-    const cloudData = await fetchSharedNotesFromCloud(shareRoomCode);
-    if (cloudData && Array.isArray(cloudData.sharedNotes)) {
-      mergeIncomingSharedNotes(cloudData);
-    }
-    // 내 기기에서 이미 '공유 켜기'로 지정해 둔 노트가 있다면 클라우드에 즉시 반영
-    if (notes.some(n => n.isShared)) {
-      await pushSharedNotesOnlyToCloud(Date.now());
+    if (!getCleanFirebaseUrl()) {
+      alert('코드 상단 FIREBASE_DB_URL에 Firebase 데이터베이스 주소를 먼저 입력해 주세요.');
+      return;
     }
 
-    startRealtimeSyncListener(shareRoomCode);
-    closeShareRoomModal();
+    personalVaultCode = val;
+    saveSyncMeta();
+    lastPersonalCloudTs = 0;
+
+    // 서버에 이미 저장된 내 개인 노트가 있으면 가져오고, 없으면 현재 로컬 노트를 업로드
+    const cloudVault = await fetchPersonalVaultFromCloud(personalVaultCode);
+    if (cloudVault && Array.isArray(cloudVault.privateNotes)) {
+      applyIncomingPersonalVault(cloudVault);
+      // 새로 추가한 공유방들도 서버에서 불러오기
+      for (const r of joinedSharedRooms) {
+        const rData = await fetchSingleRoomFromCloud(r);
+        if (rData) applyIncomingRoomData(r, rData);
+      }
+    } else {
+      await pushPersonalVaultToCloud(Date.now());
+    }
+
+    rebuildAllCloudListeners();
+    updateSyncStatusIndicator(true);
     renderHome();
   }
 
-  function disconnectShareRoom() {
-    stopRealtimeSyncListener();
-    shareRoomCode = '';
-    saveShareRoomMeta();
-    // 연결 해제 시 상대방에게서 받아온 공유 노트만 화면에서 숨기거나 로컬 비공개 노트만 유지
-    notes = notes.filter(n => !n.isShared);
+  function clearPersonalVaultCode() {
+    personalVaultCode = '';
+    saveSyncMeta();
+    rebuildAllCloudListeners();
+    updateSyncStatusIndicator(joinedSharedRooms.length > 0);
+    renderHome();
+  }
+
+  async function addSharedRoom() {
+    const input = document.getElementById('new-shared-room-input');
+    const roomName = input.value.trim();
+    if (!roomName) return;
+    if (!getCleanFirebaseUrl()) {
+      alert('코드 상단 FIREBASE_DB_URL에 Firebase 데이터베이스 주소를 먼저 입력해 주세요.');
+      return;
+    }
+
+    if (!joinedSharedRooms.includes(roomName)) {
+      joinedSharedRooms.push(roomName);
+      saveSyncMeta();
+    }
+    input.value = '';
+
+    const rData = await fetchSingleRoomFromCloud(roomName);
+    if (rData && Array.isArray(rData.roomNotes)) {
+      applyIncomingRoomData(roomName, rData);
+    }
+
+    if (personalVaultCode) {
+      await pushPersonalVaultToCloud(Date.now());
+    }
+    rebuildAllCloudListeners();
+    renderJoinedRoomsList();
+    renderHome();
+  }
+
+  function leaveSharedRoom(roomName) {
+    joinedSharedRooms = joinedSharedRooms.filter(r => r !== roomName);
+    saveSyncMeta();
+
+    // 해당 방에서만 공유되던 외부 노트 정리
+    const nextNotes = [];
+    notes.forEach(n => {
+      const rooms = getNoteSharedRooms(n);
+      if (!rooms.includes(roomName)) {
+        nextNotes.push(n);
+      } else {
+        const remain = rooms.filter(r => r !== roomName);
+        if (remain.length > 0) {
+          nextNotes.push({ ...n, sharedRooms: remain });
+        }
+      }
+    });
+    notes = nextNotes;
     saveLocalVault();
-    updateSyncStatusIndicator(false);
-    closeShareRoomModal();
+    if (personalVaultCode) pushPersonalVaultToCloud(Date.now());
+
+    rebuildAllCloudListeners();
+    renderJoinedRoomsList();
     renderHome();
   }
 
-  // ================= 개별 노트 & 묶음 파일(폴더) 공유 ON/OFF 토글 =================
-  function ensureShareRoomReady() {
+  // ================= 개별 노트·파일 다중 공유방 선택기 =================
+  function openShareSelectorFromPopover() {
+    const id = actionTargetNoteId;
+    closeCardPopover();
+    if (id) openNoteShareSelector(id);
+  }
+
+  function openNoteShareSelector(noteId) {
+    if (!noteId) return;
     if (!getCleanFirebaseUrl()) {
       alert('실시간 공유를 사용하려면 먼저 코드 상단의 FIREBASE_DB_URL에 데이터베이스 주소를 입력해 주세요.');
-      return false;
+      return;
     }
-    if (!shareRoomCode) {
-      openShareRoomModal();
-      return false;
-    }
-    return true;
-  }
 
-  // 홈 화면 카드 점 3개(⋮) 메뉴에서 실행 (묶음 카드면 하위 노트까지 한꺼번에 공유 ON/OFF)
-  function toggleTargetNoteShare() {
-    const target = notes.find(n => n.id === actionTargetNoteId);
+    shareSelectorTargetNoteId = noteId;
+    const target = notes.find(n => n.id === noteId);
     if (!target) return;
-    closeCardPopover();
 
     const children = notes.filter(n => n.parentId === target.id);
-    const isFolderCard = !activeFolderId && children.length > 0;
-    const currentlyShared = isFolderCard
-      ? (target.isShared && children.every(c => c.isShared))
-      : Boolean(target.isShared);
+    const isFolder = children.length > 0 && (activeFolderId === target.id || !activeFolderId);
 
-    const nextShared = !currentlyShared;
-    if (nextShared && !ensureShareRoomReady()) return;
+    document.getElementById('note-share-modal-title').textContent = isFolder
+      ? `"${target.folderName || target.title || '묶음 파일'}" 공유방 선택`
+      : `"${target.title || '노트'}" 공유방 선택`;
 
-    target.isShared = nextShared;
-    if (isFolderCard) {
-      children.forEach(c => { c.isShared = nextShared; });
+    document.getElementById('note-share-modal-desc').textContent = isFolder
+      ? '선택한 모든 방에 이 파일과 하위 노트가 함께 실시간 공유됩니다.'
+      : '선택한 모든 방(중복 가능)에 이 노트가 실시간 공유됩니다.';
+
+    renderNoteShareChecklist();
+    document.getElementById('note-share-modal').classList.remove('hidden');
+  }
+
+  function closeNoteShareSelector(e) {
+    if (!e || e.target.id === 'note-share-modal') {
+      document.getElementById('note-share-modal').classList.add('hidden');
+      shareSelectorTargetNoteId = null;
+    }
+  }
+
+  function renderNoteShareChecklist() {
+    const target = notes.find(n => n.id === shareSelectorTargetNoteId);
+    if (!target) return;
+    const activeRooms = getNoteSharedRooms(target);
+
+    // 현재 노트에는 체크되어 있는데 joinedSharedRooms에 누락된 방이 있다면 합쳐서 표시
+    const allAvailableRooms = Array.from(new Set([...joinedSharedRooms, ...activeRooms]));
+    const listEl = document.getElementById('note-share-rooms-checklist');
+
+    if (allAvailableRooms.length === 0) {
+      listEl.innerHTML = `<div class="text-xs text-gray-400 text-center py-6">위 입력창에 공유할 방 이름(예: 가족방, 친구방)을 먼저 추가해 주세요.</div>`;
+      return;
     }
 
-    saveStateToDB();
-    renderHome();
+    listEl.innerHTML = allAvailableRooms.map(room => {
+      const checked = activeRooms.includes(room);
+      return `
+        <div onclick="toggleRoomForTargetNote('${room.replace(/'/g, "\\'")}')"
+          class="p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition ${
+            checked ? 'border-emerald-400 bg-emerald-50 text-emerald-950' : 'border-gray-200 bg-gray-50 text-gray-800'
+          }">
+          <span class="text-xs font-bold">${room}</span>
+          <span class="w-5 h-5 rounded-md border flex items-center justify-center text-xs font-bold ${
+            checked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white'
+          }">${checked ? '✓' : ''}</span>
+        </div>
+      `;
+    }).join('');
   }
 
-  // 폴더 안으로 들어갔을 때 상단 '파일 공유' 버튼으로 폴더 전체 공유 ON/OFF
-  function toggleActiveFolderShare() {
-    if (!activeFolderId) return;
-    const parent = notes.find(n => n.id === activeFolderId);
-    if (!parent) return;
-    const children = notes.filter(n => n.parentId === activeFolderId);
-    const allShared = parent.isShared && children.every(c => c.isShared);
-    const nextShared = !allShared;
+  async function quickAddRoomAndAssign() {
+    const input = document.getElementById('quick-add-room-in-selector');
+    const roomName = input.value.trim();
+    if (!roomName) return;
 
-    if (nextShared && !ensureShareRoomReady()) return;
-
-    parent.isShared = nextShared;
-    children.forEach(c => { c.isShared = nextShared; });
-    saveStateToDB();
-    renderHome();
+    if (!joinedSharedRooms.includes(roomName)) {
+      joinedSharedRooms.push(roomName);
+      saveSyncMeta();
+      const rData = await fetchSingleRoomFromCloud(roomName);
+      if (rData && Array.isArray(rData.roomNotes)) {
+        applyIncomingRoomData(roomName, rData);
+      }
+      rebuildAllCloudListeners();
+    }
+    input.value = '';
+    toggleRoomForTargetNote(roomName, true);
   }
 
-  // 에디터 화면 상단 '비공개 / 공유중' 알약 버튼 및 드로어 스위치
-  function toggleCurrentNoteShare() {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (!note) return;
-    const nextShared = !note.isShared;
+  function toggleRoomForTargetNote(roomName, forceEnable = null) {
+    const target = notes.find(n => n.id === shareSelectorTargetNoteId);
+    if (!target) return;
 
-    if (nextShared && !ensureShareRoomReady()) return;
+    const children = notes.filter(n => n.parentId === target.id);
+    const isFolder = children.length > 0 && (activeFolderId === target.id || !activeFolderId);
+    const currentRooms = getNoteSharedRooms(target);
+    const shouldEnable = forceEnable !== null ? forceEnable : !currentRooms.includes(roomName);
 
-    note.isShared = nextShared;
-    saveStateToDB();
-    renderEditor();
-    if (!document.getElementById('editor-drawer-backdrop').classList.contains('hidden')) {
-      renderDrawerControls();
+    const applyRoomChange = (noteObj) => {
+      const prev = getNoteSharedRooms(noteObj);
+      if (shouldEnable) {
+        if (!prev.includes(roomName)) noteObj.sharedRooms = [...prev, roomName];
+      } else {
+        noteObj.sharedRooms = prev.filter(r => r !== roomName);
+      }
+    };
+
+    applyRoomChange(target);
+    if (isFolder) {
+      children.forEach(c => applyRoomChange(c));
+    }
+
+    saveStateToDB(false, [roomName]);
+    renderNoteShareChecklist();
+
+    if (!document.getElementById('editor-view').classList.contains('hidden')) {
+      renderEditor();
+    } else {
+      renderHome();
+    }
+  }
+
+  function setTargetNotePrivate() {
+    const target = notes.find(n => n.id === shareSelectorTargetNoteId);
+    if (!target) return;
+
+    const children = notes.filter(n => n.parentId === target.id);
+    const isFolder = children.length > 0 && (activeFolderId === target.id || !activeFolderId);
+    const affectedRooms = new Set(getNoteSharedRooms(target));
+
+    target.sharedRooms = [];
+    if (isFolder) {
+      children.forEach(c => {
+        getNoteSharedRooms(c).forEach(r => affectedRooms.add(r));
+        c.sharedRooms = [];
+      });
+    }
+
+    saveStateToDB(false, Array.from(affectedRooms));
+    closeNoteShareSelector();
+    if (!document.getElementById('editor-view').classList.contains('hidden')) {
+      renderEditor();
+    } else {
+      renderHome();
     }
   }
 
@@ -1451,7 +1813,7 @@
       photos: [],
       subChecks: []
     });
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
 
     requestAnimationFrame(() => {
@@ -1542,7 +1904,7 @@
       }
 
       editingSinglePhotoId = newId;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     } finally {
       isProcessingSingleUpload = false;
@@ -1595,7 +1957,8 @@
     clearTimeout(singlePhotoLongPressTimer);
     if (singlePhotoResizeState.active) {
       singlePhotoResizeState.active = false;
-      saveStateToDB();
+      const note = notes.find(n => n.id === currentNoteId);
+      saveStateToDB(false, getNoteSharedRooms(note));
     }
   });
   document.addEventListener('pointercancel', () => {
@@ -1821,7 +2184,7 @@
       setAllBlocksCardBg(finalHex);
       renderDrawerControls();
     }
-    saveStateToDB();
+    saveStateToDB(false, []);
     closeCustomColorModal();
   }
 
@@ -1896,10 +2259,10 @@
       folderTitleInput.classList.remove('hidden');
       folderTitleInput.value = parent.folderName || parent.title || '';
 
-      const allFolderShared = parent.isShared && children.every(c => c.isShared);
-      folderShareBtn.textContent = allFolderShared ? '파일 공유중' : '파일 공유';
-      folderShareBtn.className = allFolderShared
-        ? 'px-2.5 py-1.5 bg-[#EDE9FE] text-purple-950 border border-purple-300 rounded-xl text-xs font-bold shadow-sm active:scale-95'
+      const folderRooms = getNoteSharedRooms(parent);
+      folderShareBtn.textContent = folderRooms.length > 0 ? `공유 (${folderRooms.length})` : '파일 공유';
+      folderShareBtn.className = folderRooms.length > 0
+        ? 'px-2.5 py-1.5 bg-emerald-500 text-white border border-emerald-500 rounded-xl text-xs font-bold shadow-sm active:scale-95'
         : 'px-2.5 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-xl text-xs font-bold shadow-sm active:scale-95';
     } else {
       backBtn.classList.add('hidden');
@@ -1916,13 +2279,15 @@
       const previewBlocks = note.blocks.filter(b => b.type !== 'plain-text' && b.type !== 'photo-only' && b.type !== 'single-photo').slice(0, gridCols === 3 ? 3 : 5);
       const theme = getContrastTheme(note.bgColor, '#FFFFFF');
 
-      const hasAnySharedInGroup = isStackedGroup
-        ? (note.isShared || children.some(c => c.isShared))
-        : Boolean(note.isShared);
+      const groupRoomsSet = new Set(getNoteSharedRooms(note));
+      if (isStackedGroup) {
+        children.forEach(c => getNoteSharedRooms(c).forEach(r => groupRoomsSet.add(r)));
+      }
+      const groupRooms = Array.from(groupRoomsSet);
 
-      const sharedBadgeHTML = hasAnySharedInGroup ? `
-        <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white text-[9px] font-bold shrink-0">
-          공유
+      const sharedBadgeHTML = groupRooms.length > 0 ? `
+        <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white text-[9px] font-bold shrink-0 max-w-[68px] truncate">
+          ${groupRooms.length === 1 ? groupRooms[0] : `${groupRooms[0]} +${groupRooms.length - 1}`}
         </span>
       ` : '';
 
@@ -2044,7 +2409,7 @@
     const parent = notes.find(n => n.id === activeFolderId);
     if (parent) {
       parent.folderName = val;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(parent));
     }
   }
 
@@ -2143,15 +2508,16 @@
         const targetNote = notes.find(n => n.id === homeDragInfo.mergeTargetId);
         if (draggedNote && targetNote) {
           draggedNote.parentId = targetNote.id;
-          // 대상 폴더가 공유 상태라면 새로 합쳐진 노트도 자동 공유 동기화
-          if (targetNote.isShared) {
-            draggedNote.isShared = true;
+          // 대상 폴더가 공유 방을 가지고 있다면 새로 합쳐진 노트도 그 방에 자동 포함
+          const targetRooms = getNoteSharedRooms(targetNote);
+          if (targetRooms.length > 0) {
+            draggedNote.sharedRooms = Array.from(new Set([...getNoteSharedRooms(draggedNote), ...targetRooms]));
           }
           if (!targetNote.folderName) {
             targetNote.folderName = targetNote.title || '새 묶음';
           }
           recentTabIds = recentTabIds.filter(id => id !== draggedNote.id);
-          saveStateToDB();
+          saveStateToDB(false, targetRooms);
           renderHome();
         }
       } else {
@@ -2178,7 +2544,7 @@
             const reorderedRoots = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
             notes = [...reorderedRoots, ...childNotes];
           }
-          saveStateToDB();
+          saveStateToDB(false, []);
           renderHome();
         }
       }
@@ -2289,7 +2655,7 @@
 
       if (chipDragInfo.kind === 'tab' && orderedIds.length > 0) {
         recentTabIds = orderedIds;
-        saveStateToDB();
+        saveStateToDB(false, []);
         renderEditor();
       } else if (chipDragInfo.kind === 'linked' && orderedIds.length > 0) {
         const groupSet = new Set(orderedIds);
@@ -2306,7 +2672,7 @@
           reorderedGroup[i].parentId = newRoot.id;
         }
         notes = [...reorderedGroup, ...otherNotes];
-        saveStateToDB();
+        saveStateToDB(false, getNoteSharedRooms(newRoot));
         renderEditor();
       }
     }
@@ -2368,19 +2734,19 @@
       restored.parentId = null;
     }
     notes.push(restored);
-    saveStateToDB();
+    saveStateToDB(false, []);
     renderTrashList();
   }
 
   function permanentlyDeleteNote(noteId) {
     trashedNotes = trashedNotes.filter(n => n.id !== noteId);
-    saveStateToDB();
+    saveStateToDB(false, []);
     renderTrashList();
   }
 
   function emptyAllTrash() {
     trashedNotes = [];
-    saveStateToDB();
+    saveStateToDB(false, []);
     renderTrashList();
   }
 
@@ -2390,14 +2756,8 @@
     const target = notes.find(n => n.id === noteId);
     const shareBtn = document.getElementById('popover-share-btn');
     if (target && shareBtn) {
-      const children = notes.filter(n => n.parentId === target.id);
-      const isFolderCard = !activeFolderId && children.length > 0;
-      const isCurrentlyShared = isFolderCard
-        ? (target.isShared && children.every(c => c.isShared))
-        : Boolean(target.isShared);
-      shareBtn.textContent = isCurrentlyShared
-        ? (isFolderCard ? '파일 공유 끄기' : '공유 끄기')
-        : (isFolderCard ? '파일 공유 켜기' : '공유 켜기');
+      const rooms = getNoteSharedRooms(target);
+      shareBtn.textContent = rooms.length > 0 ? `공유 설정 (${rooms.length}방)` : '공유 설정';
     }
 
     const btnRect = e.currentTarget.getBoundingClientRect();
@@ -2406,7 +2766,7 @@
 
     backdrop.classList.remove('hidden');
 
-    const popW = 132;
+    const popW = 136;
     let left = btnRect.right - popW;
     if (left < 12) left = 12;
     if (left + popW > window.innerWidth - 12) left = window.innerWidth - popW - 12;
@@ -2428,7 +2788,7 @@
       id: 'n' + Date.now(),
       title: `${origin.title || '노트'} (복사본)`,
       parentId: origin.parentId,
-      isShared: false, // 복사본은 안전을 위해 기본 비공개로 생성
+      sharedRooms: [],
       bgColor: origin.bgColor,
       paper: origin.paper,
       blocks: origin.blocks.map((b, i) => ({
@@ -2439,7 +2799,7 @@
       }))
     };
     notes.push(copyNote);
-    saveStateToDB();
+    saveStateToDB(false, []);
     closeCardPopover();
     renderHome();
   }
@@ -2447,12 +2807,16 @@
   function moveTargetNoteToTrash() {
     if (!actionTargetNoteId) return;
     const toTrash = notes.filter(n => n.id === actionTargetNoteId || n.parentId === actionTargetNoteId);
-    toTrash.forEach(n => { n.isShared = false; }); // 휴지통으로 이동 시 공유 자동 해제
+    const affectedRooms = new Set();
+    toTrash.forEach(n => {
+      getNoteSharedRooms(n).forEach(r => affectedRooms.add(r));
+      n.sharedRooms = [];
+    });
     trashedNotes.unshift(...toTrash);
     notes = notes.filter(n => n.id !== actionTargetNoteId && n.parentId !== actionTargetNoteId);
     recentTabIds = recentTabIds.filter(id => id !== actionTargetNoteId);
     if (activeFolderId === actionTargetNoteId) activeFolderId = null;
-    saveStateToDB();
+    saveStateToDB(false, Array.from(affectedRooms));
     closeCardPopover();
     renderHome();
   }
@@ -2581,7 +2945,7 @@
         goHome();
       }
     } else {
-      saveStateToDB();
+      saveStateToDB(false, []);
       renderEditor();
     }
   }
@@ -2606,7 +2970,7 @@
       b.done = nextState;
       if (b.type === 'split-slim') b.done2 = nextState;
     });
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
   }
 
@@ -2637,7 +3001,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
     note.bgColor = hex;
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderDrawerControls();
     renderEditor();
   }
@@ -2646,7 +3010,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
     note.paper = paperId;
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderDrawerControls();
     renderEditor();
   }
@@ -2657,7 +3021,7 @@
     note.blocks.forEach(b => {
       if (b.type !== 'single-photo') b.cardBg = bgVal;
     });
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderDrawerControls();
     renderEditor();
   }
@@ -2675,7 +3039,7 @@
         b.done2 = false;
       }
     });
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderDrawerControls();
     renderEditor();
   }
@@ -2684,19 +3048,20 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
 
+    const rooms = getNoteSharedRooms(note);
     const drawerShareBtn = document.getElementById('drawer-share-toggle-btn');
     const drawerShareLabel = document.getElementById('drawer-share-label');
     const drawerShareBadge = document.getElementById('drawer-share-badge');
-    if (note.isShared) {
+    if (rooms.length > 0) {
       drawerShareBtn.className = 'w-full py-2.5 px-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-left text-xs font-bold flex justify-between items-center transition';
-      drawerShareLabel.textContent = '공유 중 (클라우드 실시간 동기화)';
-      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-emerald-500 text-white';
-      drawerShareBadge.textContent = 'ON';
+      drawerShareLabel.textContent = `공유 중: ${rooms.join(', ')}`;
+      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-emerald-500 text-white shrink-0';
+      drawerShareBadge.textContent = `${rooms.length}방`;
     } else {
       drawerShareBtn.className = 'w-full py-2.5 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-left text-xs font-bold flex justify-between items-center transition';
-      drawerShareLabel.textContent = '비공개 (내 기기에만 저장)';
-      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-gray-300 text-gray-700';
-      drawerShareBadge.textContent = 'OFF';
+      drawerShareLabel.textContent = '비공개 (내 보관함 전용)';
+      drawerShareBadge.className = 'px-2 py-0.5 rounded-md text-[11px] bg-gray-300 text-gray-700 shrink-0';
+      drawerShareBadge.textContent = '설정 →';
     }
 
     const btnBottom = document.getElementById('drawer-sort-bottom');
@@ -2734,14 +3099,15 @@
     if (!note) return;
     const noteTheme = getContrastTheme(note.bgColor, '#FFFFFF');
 
+    const rooms = getNoteSharedRooms(note);
     const sharePill = document.getElementById('editor-share-pill');
     if (sharePill) {
-      if (note.isShared) {
-        sharePill.textContent = '공유중 ON';
-        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-400 bg-emerald-500 text-white transition active:scale-95';
+      if (rooms.length > 0) {
+        sharePill.textContent = rooms.length === 1 ? `공유: ${rooms[0]}` : `공유: ${rooms[0]} +${rooms.length - 1}`;
+        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-400 bg-emerald-500 text-white transition active:scale-95 max-w-[140px] truncate';
       } else {
         sharePill.textContent = '비공개';
-        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-black/15 bg-white/80 text-gray-700 transition active:scale-95';
+        sharePill.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold border border-black/15 bg-white/80 text-gray-700 transition active:scale-95 max-w-[140px] truncate';
       }
     }
 
@@ -2881,7 +3247,7 @@
         e.preventDefault();
         block.isPlainMemo = true;
         block.done = false;
-        saveStateToDB();
+        saveStateToDB(false, getNoteSharedRooms(note));
         renderEditor();
         requestAnimationFrame(() => {
           const inp = document.querySelector(`[data-block-id="${blockId}"] [data-role="main-title"]`);
@@ -2914,7 +3280,7 @@
       block.subChecks.push(newItem);
     }
 
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
     requestAnimationFrame(() => {
       const inp = document.querySelector(`[data-sub-id="${newSubId}"] textarea`);
@@ -2946,7 +3312,7 @@
       if (!targetSub.isPlainMemo) {
         targetSub.isPlainMemo = true;
         targetSub.done = false;
-        saveStateToDB();
+        saveStateToDB(false, getNoteSharedRooms(note));
         renderEditor();
         requestAnimationFrame(() => {
           const sameInp = document.querySelector(`[data-sub-id="${subId}"] textarea`);
@@ -2961,7 +3327,7 @@
       if (el.value === '') {
         const prevSubId = idx > 0 ? block.subChecks[idx - 1].id : null;
         block.subChecks.splice(idx, 1);
-        saveStateToDB();
+        saveStateToDB(false, getNoteSharedRooms(note));
         renderEditor();
 
         requestAnimationFrame(() => {
@@ -2988,7 +3354,7 @@
     const sub = block?.subChecks?.find(s => s.id === subId);
     if (sub) {
       sub.done = !sub.done;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     }
   }
@@ -2999,7 +3365,7 @@
     const sub = block?.subChecks?.find(s => s.id === subId);
     if (sub) {
       sub.text = val;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
     }
   }
 
@@ -3008,7 +3374,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block && Array.isArray(block.subChecks)) {
       block.subChecks = block.subChecks.filter(s => s.id !== subId);
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     }
   }
@@ -3390,7 +3756,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block.done2 = !block.done2;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     }
   }
@@ -3503,7 +3869,7 @@
           completedSortMode = 'stay';
         }
         note.blocks = reordered;
-        saveStateToDB();
+        saveStateToDB(false, getNoteSharedRooms(note));
         renderEditor();
       }
     }
@@ -3527,7 +3893,7 @@
     const [removed] = note.blocks.splice(idx, 1);
     if (editingSinglePhotoId === blockId) editingSinglePhotoId = null;
     lastDeletedBlockInfo = { noteId: note.id, index: idx, block: removed };
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
 
     const toast = document.getElementById('undo-toast');
@@ -3544,7 +3910,7 @@
     const note = notes.find(n => n.id === lastDeletedBlockInfo.noteId);
     if (note) {
       note.blocks.splice(lastDeletedBlockInfo.index, 0, lastDeletedBlockInfo.block);
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     }
     lastDeletedBlockInfo = null;
@@ -3555,7 +3921,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (note) {
       note.title = val;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
     }
   }
 
@@ -3564,7 +3930,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block.done = !block.done;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
       renderEditor();
     }
   }
@@ -3574,7 +3940,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block[field] = val;
-      saveStateToDB();
+      saveStateToDB(false, getNoteSharedRooms(note));
     }
   }
 
@@ -3679,15 +4045,14 @@
 
   function confirmCreateNote() {
     const newId = 'n' + Date.now();
-    // 공유 중인 폴더 안에서 새 노트를 만들면 자동으로 폴더와 함께 공유 설정
     const parentFolder = activeFolderId ? notes.find(n => n.id === activeFolderId) : null;
-    const inheritShared = Boolean(parentFolder && parentFolder.isShared);
+    const inheritedRooms = parentFolder ? [...getNoteSharedRooms(parentFolder)] : [];
 
     notes.push({
       id: newId,
       title: '',
       parentId: activeFolderId || null,
-      isShared: inheritShared,
+      sharedRooms: inheritedRooms,
       bgColor: draftColor,
       paper: draftPaper,
       blocks: [
@@ -3706,7 +4071,7 @@
         }
       ]
     });
-    saveStateToDB();
+    saveStateToDB(false, inheritedRooms);
     closeCreateSheet();
     openNote(newId, true);
   }
@@ -3768,7 +4133,7 @@
       photos: [],
       subChecks: []
     });
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     closeAddBlockModal();
     renderEditor();
   }
@@ -3816,11 +4181,14 @@
     const rootFolder = notes.find(n => n.id === linkingRootId);
     if (!target || !linkingRootId) return;
     target.parentId = target.parentId === linkingRootId ? null : linkingRootId;
+    const rootRooms = rootFolder ? getNoteSharedRooms(rootFolder) : [];
     if (target.parentId) {
-      if (rootFolder && rootFolder.isShared) target.isShared = true;
+      if (rootRooms.length > 0) {
+        target.sharedRooms = Array.from(new Set([...getNoteSharedRooms(target), ...rootRooms]));
+      }
       recentTabIds = recentTabIds.filter(id => id !== target.id);
     }
-    saveStateToDB();
+    saveStateToDB(false, rootRooms);
     renderLinkModalList();
     if (!document.getElementById('editor-view').classList.contains('hidden')) {
       renderEditor();
@@ -3884,7 +4252,7 @@
       const persistedDataUrl = await compressAndPersistImage(file);
       block.photos.push(persistedDataUrl);
     }
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
     e.target.value = '';
   }
@@ -3936,7 +4304,7 @@
     if (!block || !block.photos.length) return;
     block.photos.splice(lightboxIndex, 1);
     lightboxZoom = 1;
-    saveStateToDB();
+    saveStateToDB(false, getNoteSharedRooms(note));
     renderEditor();
     if (block.photos.length === 0) {
       closeLightbox();
@@ -3968,9 +4336,9 @@
     document.getElementById('lightbox-modal').classList.add('hidden');
   }
 
-  // 앱 실행 시 로컬 비공개 보관함 복원 후, 공유방이 설정된 경우에만 공유 노트 병합
+  // 앱 실행 시 로컬 보관함 복원 후 개인 동기화 코드 및 참여한 다중 공유방 병합
   (async function bootstrapApp() {
-    loadShareRoomMeta();
+    loadSyncMeta();
     await openAppDB();
 
     const saved = await loadLocalVault();
@@ -3981,6 +4349,10 @@
       if (saved.baseBgColors) baseBgColors = saved.baseBgColors;
       if (saved.baseBlockColors) baseBlockColors = saved.baseBlockColors;
       if (saved.cpRecentColors) cpRecentColors = saved.cpRecentColors;
+      if (Array.isArray(saved.joinedSharedRooms) && joinedSharedRooms.length === 0) {
+        joinedSharedRooms = saved.joinedSharedRooms;
+        saveSyncMeta();
+      }
     } else {
       notes = getInitialGuideNotes();
       trashedNotes = [];
@@ -3988,12 +4360,20 @@
       saveLocalVault();
     }
 
-    if (shareRoomCode && getCleanFirebaseUrl()) {
-      const cloudData = await fetchSharedNotesFromCloud(shareRoomCode);
-      if (cloudData && Array.isArray(cloudData.sharedNotes)) {
-        mergeIncomingSharedNotes(cloudData);
+    if (getCleanFirebaseUrl()) {
+      if (personalVaultCode) {
+        const cloudVault = await fetchPersonalVaultFromCloud(personalVaultCode);
+        if (cloudVault && Array.isArray(cloudVault.privateNotes)) {
+          applyIncomingPersonalVault(cloudVault);
+        }
       }
-      startRealtimeSyncListener(shareRoomCode);
+      for (const roomName of joinedSharedRooms) {
+        const rData = await fetchSingleRoomFromCloud(roomName);
+        if (rData && Array.isArray(rData.roomNotes)) {
+          applyIncomingRoomData(roomName, rData);
+        }
+      }
+      rebuildAllCloudListeners();
     }
 
     renderHome();
