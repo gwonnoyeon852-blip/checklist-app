@@ -49,16 +49,17 @@
       background-position: 16px 16px;
     }
 
-    /* 사각형 묶음 카드 & 클릭 시 옆으로 펼쳐지는 애니메이션 */
+    /* 10번: 홈 화면에서 뒤쪽 카드가 옆·위·아래 다른 노트와 절대 겹치지 않도록 여백 확보 */
     .stacked-note-wrap {
       position: relative;
-      padding-top: 8px;
-      padding-right: 10px;
+      padding-top: 14px;
+      padding-right: 16px;
+      padding-bottom: 4px;
       cursor: pointer;
     }
     .stacked-back-sheet {
       position: absolute;
-      inset: 8px 10px 0 0;
+      inset: 14px 16px 4px 0;
       border-radius: 16px;
       border: 1px solid rgba(0, 0, 0, 0.14);
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
@@ -73,16 +74,25 @@
       transform-origin: bottom left;
     }
     .stacked-note-wrap.is-spreading .stacked-front-sheet {
-      transform: translate(-5px, 2px) rotate(-3.5deg);
+      transform: translate(-4px, 2px) rotate(-3deg);
     }
     .stacked-note-wrap.is-spreading .stacked-back-1 {
-      transform: translate(14px, -6px) rotate(6deg) !important;
+      transform: translate(12px, -5px) rotate(5deg) !important;
     }
     .stacked-note-wrap.is-spreading .stacked-back-2 {
-      transform: translate(24px, -11px) rotate(11deg) !important;
+      transform: translate(20px, -9px) rotate(9deg) !important;
     }
     .stacked-note-wrap.is-spreading .stacked-back-3 {
-      transform: translate(32px, -15px) rotate(15deg) !important;
+      transform: translate(26px, -13px) rotate(13deg) !important;
+    }
+
+    /* 9번: 홈에서 노트를 다른 노트 위에 겹쳐서 묶으려 할 때 하이라이트 */
+    .merge-target-highlight {
+      outline: 2.5px dashed #8B5CF6 !important;
+      outline-offset: 3px;
+      transform: scale(1.02);
+      background-color: rgba(237, 233, 254, 0.35);
+      border-radius: 18px;
     }
 
     /* 미니 드롭다운 메뉴 */
@@ -159,6 +169,20 @@
       resize: none;
       width: 100%;
       display: block;
+      overflow: hidden;
+    }
+
+    /* 4번: 어떤 리스트든 길어지면 아랫줄로 자연스럽게 줄바꿈되는 입력창 */
+    .auto-wrap-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      overflow: hidden;
+      display: block;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     /* 드래그 손잡이 */
@@ -177,12 +201,12 @@
       opacity: 1;
     }
 
-    .block-dragging, .home-card-dragging {
+    .block-dragging, .home-card-dragging, .tab-chip-dragging {
       transform: scale(1.04) !important;
-      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24) !important;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22) !important;
       border: 2px solid #8B5CF6 !important;
       z-index: 40 !important;
-      opacity: 0.96 !important;
+      opacity: 0.95 !important;
       touch-action: none !important;
     }
 
@@ -292,7 +316,8 @@
       </div>
     </header>
 
-    <main id="home-grid" class="flex-1 overflow-y-auto px-4 pb-28 grid grid-cols-2 gap-3.5 content-start no-scrollbar"></main>
+    <!-- 10번: 카드 간 넉넉한 간격(gap-4) 확보 -->
+    <main id="home-grid" class="flex-1 overflow-y-auto px-4 pb-28 grid grid-cols-2 gap-4 content-start no-scrollbar"></main>
 
     <button onclick="openCreateSheet()" class="postit-btn fixed bottom-6 right-6 w-16 h-16 rounded-tl-2xl rounded-tr-md rounded-bl-md flex flex-col items-center justify-center z-20">
       <span class="text-2xl leading-none text-purple-950 font-light">+</span>
@@ -319,6 +344,7 @@
 
   <!-- ================= 2. 에디터 화면 ================= -->
   <div id="editor-view" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
+    <!-- 1번: 이전에 연 노트 탭도 꾹 눌러 순서 이동 가능 -->
     <div class="bg-gray-100 pt-2 px-2 flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 shrink-0" id="recent-tabs-bar"></div>
 
     <div class="px-4 py-2 flex justify-between items-center border-b border-black/5 shrink-0" id="editor-topbar">
@@ -329,15 +355,17 @@
         <button onclick="toggleAllChecklists()" id="all-check-square" title="전체 체크 / 해제"
           class="w-[18px] h-[18px] rounded border-[1.8px] flex items-center justify-center text-[10px] font-bold transition active:scale-90">
         </button>
+        <!-- 7번: 노트 옵션 버튼을 점 3개(⋮)에서 가로 줄 3개(☰) 아이콘으로 변경 -->
         <button onclick="openEditorDrawer()" id="editor-more-btn" title="노트 설정 메뉴"
-          class="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-1 active:bg-black/10 transition">
-          <span class="w-1 h-1 rounded-full bg-current"></span>
-          <span class="w-1 h-1 rounded-full bg-current"></span>
-          <span class="w-1 h-1 rounded-full bg-current"></span>
+          class="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3.5px] active:bg-black/10 transition">
+          <span class="w-4 h-[1.8px] rounded-full bg-current"></span>
+          <span class="w-4 h-[1.8px] rounded-full bg-current"></span>
+          <span class="w-4 h-[1.8px] rounded-full bg-current"></span>
         </button>
       </div>
     </div>
 
+    <!-- 1번: 연결된 노트 칩들도 꾹 눌러 순서 이동 가능 -->
     <div id="linked-chips-bar" class="hidden px-4 py-2 bg-black/[0.04] border-b border-black/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"></div>
 
     <!-- 중간 위치 선택 사진 삽입 안내 배너 -->
@@ -346,7 +374,7 @@
       <button onclick="cancelPhotoInsertMode()" class="px-2.5 py-1 bg-white text-purple-950 rounded-lg text-[11px] border border-purple-200">취소</button>
     </div>
 
-    <!-- 속지 본문 (빈 공간 클릭 시 사진 크기/삭제 편집 모드 자동 해제) -->
+    <!-- 속지 본문 -->
     <div id="editor-canvas" onclick="handleCanvasDirectClick(event)" class="relative flex-1 overflow-y-auto px-4 pt-1 pb-32 no-scrollbar flex flex-col">
       <input id="editor-title-input" type="text" placeholder="제목을 입력하세요."
         oninput="updateCurrentTitle(this.value)"
@@ -363,20 +391,20 @@
       <button onclick="undoDeleteBlock()" class="px-3 py-1 bg-white text-purple-950 rounded-lg font-bold">실행취소</button>
     </div>
 
-    <!-- 키보드 위에 따라 올라오는 하단 바 -->
+    <!-- 11번: '틀 추가' -> '리스트 추가 (틀이름)', '새로운 틀 추가' -> '새로운 리스트 추가' -->
     <div id="editor-bottom-bar" class="fixed bottom-0 inset-x-0 max-w-[600px] mx-auto bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2 z-20 flex gap-2 transition-all duration-150">
       <button onclick="addSameAsLastBlock()" id="quick-add-same-btn"
         class="flex-1 py-2.5 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
-        틀 추가 (좌측 사진형)
+        리스트 추가 (좌측 사진형)
       </button>
       <button onclick="openAddBlockModal()"
         class="flex-1 py-2.5 px-3 bg-[#EDE9FE] hover:bg-[#E4DDFD] border border-[#DDD6FE] text-purple-950 rounded-xl text-xs font-bold active:scale-98 truncate">
-        새로운 틀 추가
+        새로운 리스트 추가
       </button>
     </div>
   </div>
 
-  <!-- ================= 2-2. 에디터 점 3개(⋮) 우측 슬라이드 드로어 ================= -->
+  <!-- ================= 2-2. 에디터 우측 슬라이드 드로어 ================= -->
   <div id="editor-drawer-backdrop" class="hidden fixed inset-0 bg-black/35 z-40 flex justify-end" onclick="closeEditorDrawer(event)">
     <div id="editor-drawer-panel" class="side-drawer-panel w-[310px] max-w-[86%] h-full bg-white shadow-2xl p-5 flex flex-col overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
       <div class="flex justify-between items-center pb-3 mb-4 border-b border-gray-100">
@@ -428,7 +456,7 @@
       </div>
 
       <div class="mb-4">
-        <div class="text-xs font-bold text-gray-500 mb-2">틀 변경 (기존 항목 일괄 적용)</div>
+        <div class="text-xs font-bold text-gray-500 mb-2">리스트 모양 변경 (일괄 적용)</div>
         <div class="flex items-center gap-2 flex-wrap mb-2.5" id="drawer-block-colors"></div>
         <div id="drawer-layout-carousel" onscroll="handlePagedCarouselScroll('drawer')" class="paged-carousel-track no-scrollbar"></div>
         <div id="drawer-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
@@ -436,11 +464,11 @@
     </div>
   </div>
 
-  <!-- ================= 3. 새 노트 속지 & 틀 선택 바텀 시트 ================= -->
+  <!-- ================= 3. 새 노트 속지 & 리스트 선택 바텀 시트 ================= -->
   <div id="create-sheet-backdrop" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeCreateSheet(event)">
     <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
-      <h2 class="text-base font-bold text-gray-900 mb-3">새 포스트잇 속지 & 틀 설정</h2>
+      <h2 class="text-base font-bold text-gray-900 mb-3">새 포스트잇 속지 & 리스트 설정</h2>
 
       <div class="mb-4">
         <div class="text-[11px] font-semibold text-gray-500 mb-1.5">실물 미리보기</div>
@@ -461,12 +489,12 @@
       </div>
 
       <div class="mb-4">
-        <div class="text-xs font-bold text-gray-700 mb-2">3. 기본 체크리스트 틀 색상</div>
+        <div class="text-xs font-bold text-gray-700 mb-2">3. 기본 리스트 배경색</div>
         <div class="flex items-center gap-2.5 flex-wrap" id="sheet-block-color-picker"></div>
       </div>
 
       <div class="mb-5">
-        <div class="text-xs font-bold text-gray-700 mb-2">4. 체크리스트 틀 선택 (옆으로 스와이프)</div>
+        <div class="text-xs font-bold text-gray-700 mb-2">4. 체크리스트 모양 선택 (옆으로 스와이프)</div>
         <div id="sheet-layout-carousel" onscroll="handlePagedCarouselScroll('sheet')" class="paged-carousel-track no-scrollbar"></div>
         <div id="sheet-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
       </div>
@@ -477,19 +505,19 @@
     </div>
   </div>
 
-  <!-- ================= 4. 에디터 내 새로운 틀 추가 모달 ================= -->
+  <!-- ================= 4. 에디터 내 새로운 리스트 추가 모달 ================= -->
   <div id="add-block-modal" class="hidden fixed inset-0 bg-black/40 z-30 flex items-end justify-center" onclick="closeAddBlockModal(event)">
     <div class="w-full max-w-[600px] bg-white rounded-t-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
       <div class="w-10 h-1 bg-[#DDD6FE] rounded-full mx-auto mb-3"></div>
-      <h3 class="text-sm font-bold text-gray-900 mb-3">새로운 틀 추가</h3>
+      <h3 class="text-sm font-bold text-gray-900 mb-3">새로운 리스트 추가</h3>
 
       <div class="mb-3.5">
-        <div class="text-[11px] font-bold text-gray-600 mb-1.5">틀 배경색</div>
+        <div class="text-[11px] font-bold text-gray-600 mb-1.5">리스트 배경색</div>
         <div class="flex items-center gap-2 flex-wrap" id="modal-block-color-picker"></div>
       </div>
 
       <div class="mb-3">
-        <div class="text-[11px] font-bold text-gray-600 mb-1.5">틀 모양 (옆으로 스와이프 후 터치하여 추가)</div>
+        <div class="text-[11px] font-bold text-gray-600 mb-1.5">리스트 모양 (옆으로 스와이프 후 터치하여 추가)</div>
         <div id="modal-layout-carousel" onscroll="handlePagedCarouselScroll('modal')" class="paged-carousel-track no-scrollbar"></div>
         <div id="modal-layout-dots" class="flex justify-center items-center gap-2 mt-2.5"></div>
       </div>
@@ -614,9 +642,9 @@
 <input type="file" id="single-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleSinglePhotoUpload(event)" />
 
 <script>
-  const DB_NAME = 'PostitHybridApp_DB_v6';
+  const DB_NAME = 'PostitHybridApp_DB_v7';
   const STORE_NAME = 'userSpaces';
-  const META_KEY = 'postit_profiles_meta_v6';
+  const META_KEY = 'postit_profiles_meta_v7';
   let dbInstance = null;
 
   let profiles = [{ id: 'user_default', name: '내 공간' }];
@@ -682,12 +710,12 @@
             id: 'gb_2',
             type: 'left-photo',
             done: false,
-            title: '2. 글 영역이 늘어나면 사진도 비율에 맞게 자동 확장',
-            memo: '세부 메모 옆 + 체크 버튼으로 하위 체크리스트를 추가해 보세요.',
+            title: '2. 글이 길어지면 아랫줄로 자동 줄바꿈되고 사진도 함께 늘어납니다',
+            memo: '우측 + 버튼으로 하위 체크리스트를 바로 추가할 수 있습니다.',
             cardBg: 'rgba(255,255,255,0.92)',
             photos: [],
             subChecks: [
-              { id: 'sc_1', text: '지우기 시 체크박스만 지워져 일반 메모로 전환됩니다.', done: false, isPlainMemo: false }
+              { id: 'sc_1', text: '체크박스 해제 후 메모에서 지우기 시 줄이 삭제됩니다.', done: false, isPlainMemo: false }
             ]
           },
           {
@@ -706,7 +734,7 @@
             id: 'gb_4',
             type: 'slim',
             done: false,
-            title: '4. 점 3개(⋮)에서 사진 추가 후 원하는 중간 위치에 삽입 가능',
+            title: '4. 홈에서 노트를 꾹 눌러 다른 노트 위에 겹치면 바로 파일로 묶입니다',
             memo: '',
             cardBg: 'rgba(255,255,255,0.92)',
             photos: [],
@@ -813,6 +841,19 @@
     active: false,
     noteId: null,
     el: null,
+    mergeTargetId: null,
+    startX: 0,
+    startY: 0,
+    pointerId: null
+  };
+
+  // 1번: 상단 연 노트 탭 & 연결된 노트 칩 꾹 누르기 순서 이동 상태
+  let chipDragInfo = {
+    timer: null,
+    active: false,
+    kind: null, // 'tab' | 'linked'
+    itemId: null,
+    el: null,
     startX: 0,
     startY: 0,
     pointerId: null
@@ -866,7 +907,23 @@
   ];
   const ITEMS_PER_PAGE = 3;
 
-  // ================= 휴대폰 키보드 켜짐 감지 -> 하단 바 키보드 위로 이동 & 리스트 방해 차단 =================
+  // ================= 4번: 어떤 리스트든 줄이 길어지면 아랫줄로 자동 줄바꿈 높이 동기화 =================
+  function autoResizeTextarea(el, minHeightPx = 32) {
+    if (!el) return;
+    el.style.height = minHeightPx + 'px';
+    const nextH = Math.max(minHeightPx, el.scrollHeight);
+    el.style.height = nextH + 'px';
+  }
+
+  function resizeAllAutoTextareas() {
+    document.querySelectorAll('.direct-sheet-line').forEach(el => autoResizeSheetLine(el));
+    document.querySelectorAll('.auto-wrap-input').forEach(el => {
+      const minH = Number(el.getAttribute('data-min-h')) || 28;
+      autoResizeTextarea(el, minH);
+    });
+  }
+
+  // ================= 휴대폰 키보드 켜짐 감지 =================
   (function initKeyboardViewportAdjust() {
     if (!window.visualViewport) return;
     const adjustBarForKeyboard = () => {
@@ -1067,16 +1124,18 @@
     await switchProfile(newId);
   }
 
-  // ================= 2번: 빈 공간 클릭 시 사진 수정 모드 즉시 완료 & 속지 직접 터치 글쓰기 =================
+  // ================= 6번: 사진 추가 직후 빈 글쓰기 자동 생성 차단 & 속지 직접 터치 글쓰기 =================
   function handleCanvasDirectClick(e) {
-    // 2번: 사진 수정(크기 조절·삭제 버튼) 중일 때 사진 바깥의 빈 공간을 클릭하면 즉시 완료되어 핸들이 사라짐
     if (editingSinglePhotoId && !e.target.closest(`[data-block-id="${editingSinglePhotoId}"]`)) {
       editingSinglePhotoId = null;
       renderEditor();
       return;
     }
 
-    if (pendingPhotoInsertMode) return;
+    // 6번: 사진 삽입 슬롯을 클릭한 직후에는 배경 클릭 글쓰기가 실행되지 않도록 차단
+    if (pendingPhotoInsertMode || isProcessingSingleUpload || e.target.closest('.photo-insert-slot-btn')) {
+      return;
+    }
     if (e.target.closest('.block-item') || e.target.id === 'editor-title-input') return;
 
     const note = notes.find(n => n.id === currentNoteId);
@@ -1123,7 +1182,7 @@
     if (!note) return;
 
     if (note.blocks.length === 0) {
-      selectPhotoInsertIndex(0, mode);
+      selectPhotoInsertIndex(null, 0, mode);
       return;
     }
 
@@ -1137,7 +1196,8 @@
     renderEditor();
   }
 
-  function selectPhotoInsertIndex(insertIdx, overrideMode = null) {
+  function selectPhotoInsertIndex(e, insertIdx, overrideMode = null) {
+    if (e) e.stopPropagation(); // 6번: 부모 속지 캔버스 클릭으로 이벤트가 퍼져 빈 글쓰기가 생기는 현상 원천 차단
     const mode = overrideMode || pendingPhotoInsertMode;
     if (!mode) return;
     pendingPhotoInsertIndex = insertIdx;
@@ -1188,7 +1248,6 @@
         note.blocks.push(newPhotoBlock);
       }
 
-      // 추가 직후 크기 조절이 가능하도록 활성화 (빈 공간 클릭 시 자동 완료)
       editingSinglePhotoId = newId;
       saveStateToDB();
       renderEditor();
@@ -1515,7 +1574,7 @@
     });
   })();
 
-  // ================= 홈 화면 렌더링 =================
+  // ================= 홈 화면 렌더링 (9번: 홈 노트끼리 겹쳐서 바로 파일로 묶기 + 10번: 겹침 여백 확보) =================
   function renderHome() {
     const activeProfile = profiles.find(p => p.id === currentProfileId);
     const profileBadge = document.getElementById('current-profile-badge');
@@ -1530,7 +1589,7 @@
     const folderLinkBtn = document.getElementById('folder-link-header-btn');
     document.getElementById('trash-count-badge').textContent = trashedNotes.length;
 
-    grid.className = `flex-1 overflow-y-auto px-4 pb-28 grid gap-3.5 content-start no-scrollbar ${
+    grid.className = `flex-1 overflow-y-auto px-4 pb-28 grid gap-4 content-start no-scrollbar ${
       gridCols === 2 ? 'grid-cols-2' : gridCols === 3 ? 'grid-cols-3' : 'grid-cols-1'
     }`;
 
@@ -1608,7 +1667,7 @@
                 ${previewBlocks.map(b => `
                   <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
                     ${b.isPlainMemo ? '' : `
-                      <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                      <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${b.checkDoneText};"
                         class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
                         ${b.done ? '✓' : ''}
                       </span>
@@ -1637,7 +1696,7 @@
             ${previewBlocks.map(b => `
               <div class="flex items-center gap-1.5 text-[11px]" style="color:${theme.subColor};">
                 ${b.isPlainMemo ? '' : `
-                  <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
+                  <span style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${b.checkDoneText};"
                     class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
                     ${b.done ? '✓' : ''}
                   </span>
@@ -1691,6 +1750,7 @@
       homeDragInfo.active = true;
       homeDragInfo.noteId = noteId;
       homeDragInfo.el = cardEl;
+      homeDragInfo.mergeTargetId = null;
       homeDragInfo.pointerId = e.pointerId;
       cardEl.classList.add('home-card-dragging');
       try { cardEl.setPointerCapture(e.pointerId); } catch (_) {}
@@ -1721,18 +1781,33 @@
     const x = e.clientX;
     const y = e.clientY;
 
+    // 기존 병합 하이라이트 초기화
+    items.forEach(el => el.classList.remove('merge-target-highlight'));
+    homeDragInfo.mergeTargetId = null;
+
     for (const item of items) {
       if (item === draggingEl) continue;
       const rect = item.getBoundingClientRect();
       const insideX = x >= rect.left && x <= rect.right;
       const insideY = y >= rect.top && y <= rect.bottom;
       if (insideX && insideY) {
-        const dragIdx = items.indexOf(draggingEl);
-        const targetIdx = items.indexOf(item);
-        if (dragIdx < targetIdx) {
-          grid.insertBefore(draggingEl, item.nextSibling);
+        // 9번: 최상위 홈에서 카드의 중앙부(30%~70% 영역) 위에 겹쳐 놓으면 '파일로 묶기' 대상 지정, 가장자리면 '순서 이동'
+        const centerZoneX = x >= rect.left + rect.width * 0.25 && x <= rect.right - rect.width * 0.25;
+        const centerZoneY = y >= rect.top + rect.height * 0.25 && y <= rect.bottom - rect.height * 0.25;
+        const draggingNote = notes.find(n => n.id === homeDragInfo.noteId);
+        const draggingHasChildren = notes.some(n => n.parentId === homeDragInfo.noteId);
+
+        if (!activeFolderId && centerZoneX && centerZoneY && draggingNote && !draggingHasChildren) {
+          item.classList.add('merge-target-highlight');
+          homeDragInfo.mergeTargetId = item.getAttribute('data-home-note-id');
         } else {
-          grid.insertBefore(draggingEl, item);
+          const dragIdx = items.indexOf(draggingEl);
+          const targetIdx = items.indexOf(item);
+          if (dragIdx < targetIdx) {
+            grid.insertBefore(draggingEl, item.nextSibling);
+          } else {
+            grid.insertBefore(draggingEl, item);
+          }
         }
         break;
       }
@@ -1749,37 +1824,54 @@
       } catch (_) {}
 
       const grid = document.getElementById('home-grid');
-      const orderedIds = Array.from(grid.children).map(el => el.getAttribute('data-home-note-id')).filter(Boolean);
+      Array.from(grid.children).forEach(el => el.classList.remove('merge-target-highlight'));
 
-      if (orderedIds.length > 0) {
-        if (activeFolderId) {
-          const groupSet = new Set(orderedIds);
-          const otherNotes = notes.filter(n => !groupSet.has(n.id));
-          const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
-
-          const newRoot = reorderedGroup[0];
-          const prevRoot = notes.find(n => n.id === activeFolderId);
-          const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
-          newRoot.parentId = null;
-          newRoot.folderName = savedFolderName;
-
-          for (let i = 1; i < reorderedGroup.length; i++) {
-            reorderedGroup[i].parentId = newRoot.id;
+      // 9번: 다른 노트(또는 묶음) 중앙에 겹쳐서 놓았을 때 즉시 파일 묶음으로 병합
+      if (!activeFolderId && homeDragInfo.mergeTargetId && homeDragInfo.mergeTargetId !== homeDragInfo.noteId) {
+        const draggedNote = notes.find(n => n.id === homeDragInfo.noteId);
+        const targetNote = notes.find(n => n.id === homeDragInfo.mergeTargetId);
+        if (draggedNote && targetNote) {
+          draggedNote.parentId = targetNote.id;
+          if (!targetNote.folderName) {
+            targetNote.folderName = targetNote.title || '새 묶음';
           }
-          activeFolderId = newRoot.id;
-          notes = [...reorderedGroup, ...otherNotes];
-        } else {
-          const childNotes = notes.filter(n => n.parentId !== null);
-          const reorderedRoots = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
-          notes = [...reorderedRoots, ...childNotes];
+          recentTabIds = recentTabIds.filter(id => id !== draggedNote.id);
+          saveStateToDB();
+          renderHome();
         }
-        saveStateToDB();
-        renderHome();
+      } else {
+        const orderedIds = Array.from(grid.children).map(el => el.getAttribute('data-home-note-id')).filter(Boolean);
+        if (orderedIds.length > 0) {
+          if (activeFolderId) {
+            const groupSet = new Set(orderedIds);
+            const otherNotes = notes.filter(n => !groupSet.has(n.id));
+            const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
+
+            const newRoot = reorderedGroup[0];
+            const prevRoot = notes.find(n => n.id === activeFolderId);
+            const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
+            newRoot.parentId = null;
+            newRoot.folderName = savedFolderName;
+
+            for (let i = 1; i < reorderedGroup.length; i++) {
+              reorderedGroup[i].parentId = newRoot.id;
+            }
+            activeFolderId = newRoot.id;
+            notes = [...reorderedGroup, ...otherNotes];
+          } else {
+            const childNotes = notes.filter(n => n.parentId !== null);
+            const reorderedRoots = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
+            notes = [...reorderedRoots, ...childNotes];
+          }
+          saveStateToDB();
+          renderHome();
+        }
       }
     }
     homeDragInfo.active = false;
     homeDragInfo.noteId = null;
     homeDragInfo.el = null;
+    homeDragInfo.mergeTargetId = null;
     homeDragInfo.pointerId = null;
   }
 
@@ -1809,6 +1901,109 @@
     activeFolderId = null;
     renderHome();
   }
+
+  // ================= 1번: 상단 '이전에 연 노트 탭' & '연결된 노트 칩' 꾹 눌러 순서 이동 =================
+  function startChipDrag(e, kind, itemId) {
+    if (e.target.closest('button[data-close-tab]')) return;
+    clearTimeout(chipDragInfo.timer);
+
+    const el = e.currentTarget;
+    chipDragInfo.startX = e.clientX;
+    chipDragInfo.startY = e.clientY;
+    chipDragInfo.kind = kind;
+    chipDragInfo.itemId = itemId;
+    chipDragInfo.el = el;
+    chipDragInfo.active = false;
+
+    chipDragInfo.timer = setTimeout(() => {
+      chipDragInfo.active = true;
+      chipDragInfo.pointerId = e.pointerId;
+      el.classList.add('tab-chip-dragging');
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      if (navigator.vibrate) navigator.vibrate(25);
+    }, 320);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (!chipDragInfo.itemId || !chipDragInfo.el) return;
+
+    if (!chipDragInfo.active) {
+      const dist = Math.hypot(e.clientX - chipDragInfo.startX, e.clientY - chipDragInfo.startY);
+      if (dist > 10) {
+        clearTimeout(chipDragInfo.timer);
+        chipDragInfo.itemId = null;
+        chipDragInfo.el = null;
+      }
+      return;
+    }
+
+    e.preventDefault();
+    const parentBar = chipDragInfo.el.parentElement;
+    const siblings = Array.from(parentBar.children).filter(el => el.hasAttribute('data-chip-id'));
+    const pointerX = e.clientX;
+
+    for (const sib of siblings) {
+      if (sib === chipDragInfo.el) continue;
+      const rect = sib.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      const dragIdx = siblings.indexOf(chipDragInfo.el);
+      const targetIdx = siblings.indexOf(sib);
+
+      if (dragIdx < targetIdx && pointerX > midX) {
+        parentBar.insertBefore(chipDragInfo.el, sib.nextSibling);
+        break;
+      } else if (dragIdx > targetIdx && pointerX < midX) {
+        parentBar.insertBefore(chipDragInfo.el, sib);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  function finishChipDrag() {
+    clearTimeout(chipDragInfo.timer);
+    if (chipDragInfo.active && chipDragInfo.el) {
+      chipDragInfo.el.classList.remove('tab-chip-dragging');
+      try {
+        if (chipDragInfo.pointerId !== null) chipDragInfo.el.releasePointerCapture(chipDragInfo.pointerId);
+      } catch (_) {}
+
+      const parentBar = chipDragInfo.el.parentElement;
+      const orderedIds = Array.from(parentBar.children)
+        .filter(el => el.hasAttribute('data-chip-id'))
+        .map(el => el.getAttribute('data-chip-id'));
+
+      if (chipDragInfo.kind === 'tab' && orderedIds.length > 0) {
+        recentTabIds = orderedIds;
+        saveStateToDB();
+        renderEditor();
+      } else if (chipDragInfo.kind === 'linked' && orderedIds.length > 0) {
+        const groupSet = new Set(orderedIds);
+        const otherNotes = notes.filter(n => !groupSet.has(n.id));
+        const reorderedGroup = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
+
+        const prevRoot = notes.find(n => groupSet.has(n.id) && n.parentId === null);
+        const savedFolderName = prevRoot?.folderName || prevRoot?.title || '묶음 노트';
+
+        const newRoot = reorderedGroup[0];
+        newRoot.parentId = null;
+        newRoot.folderName = savedFolderName;
+        for (let i = 1; i < reorderedGroup.length; i++) {
+          reorderedGroup[i].parentId = newRoot.id;
+        }
+        notes = [...reorderedGroup, ...otherNotes];
+        saveStateToDB();
+        renderEditor();
+      }
+    }
+    chipDragInfo.active = false;
+    chipDragInfo.kind = null;
+    chipDragInfo.itemId = null;
+    chipDragInfo.el = null;
+    chipDragInfo.pointerId = null;
+  }
+
+  document.addEventListener('pointerup', finishChipDrag);
+  document.addEventListener('pointercancel', finishChipDrag);
 
   // ================= 휴지통 =================
   function openTrashView() {
@@ -1857,7 +2052,7 @@
     if (restored.parentId && !notes.some(n => n.id === restored.parentId)) {
       restored.parentId = null;
     }
-    notes.unshift(restored);
+    notes.push(restored);
     saveStateToDB();
     renderTrashList();
   }
@@ -1874,7 +2069,7 @@
     renderTrashList();
   }
 
-  // ================= 미니 드롭다운 메뉴 =================
+  // ================= 미니 드롭다운 메뉴 & 2번: 복사본을 기존 파일들 뒤에 생성 =================
   function openCardPopover(e, noteId) {
     actionTargetNoteId = noteId;
     const btnRect = e.currentTarget.getBoundingClientRect();
@@ -1898,6 +2093,7 @@
     document.getElementById('card-popover-backdrop').classList.add('hidden');
   }
 
+  // 2번: 복사했을 때 복사본이 기존에 생성되어 있는 파일들 뒤(notes.push)에 생성되도록 구현
   function duplicateTargetNote() {
     const origin = notes.find(n => n.id === actionTargetNoteId);
     if (!origin) return;
@@ -1914,7 +2110,7 @@
         subChecks: (b.subChecks || []).map((sc, j) => ({ ...sc, id: 'sc' + Date.now() + '_' + j }))
       }))
     };
-    notes.unshift(copyNote);
+    notes.push(copyNote);
     saveStateToDB();
     closeCardPopover();
     renderHome();
@@ -2018,6 +2214,7 @@
 
   // ================= 에디터 렌더링 & 탭 닫기 & 드로어 =================
   function openNote(noteId, focusTitle = false) {
+    if (chipDragInfo.active) return;
     const target = notes.find(n => n.id === noteId);
     if (!target) return;
     currentNoteId = noteId;
@@ -2210,6 +2407,7 @@
 
     document.getElementById('editor-more-btn').style.color = noteTheme.titleColor;
 
+    // 1번: 이전에 연 노트 탭 (꾹 눌러 순서 변경 가능)
     const activeRootId = note.parentId ? note.parentId : note.id;
     const tabsBar = document.getElementById('recent-tabs-bar');
     const tabsHTML = recentTabIds.map(id => {
@@ -2217,13 +2415,15 @@
       if (!tNote) return '';
       const isActive = id === activeRootId;
       return `
-        <div onclick="openNote('${id}')"
+        <div data-chip-id="${id}"
+          onpointerdown="startChipDrag(event, 'tab', '${id}')"
+          onclick="openNote('${id}')"
           class="pl-3 pr-1.5 py-1.5 rounded-t-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
             isActive ? 'bg-white text-gray-900 shadow-sm' : 'bg-gray-200/70 text-gray-500'
           }">
           <span class="w-2 h-2 rounded-full border border-black/20 shrink-0" style="background:${tNote.bgColor}"></span>
           <span class="max-w-[85px] truncate">${tNote.title || '제목 없음'}</span>
-          <button type="button" onclick="closeRecentTab(event, '${id}')" title="탭 닫기"
+          <button type="button" data-close-tab="true" onclick="closeRecentTab(event, '${id}')" title="탭 닫기"
             class="w-4 h-4 rounded-full hover:bg-black/10 text-[10px] text-gray-400 hover:text-gray-700 flex items-center justify-center shrink-0">
             ✕
           </button>
@@ -2238,6 +2438,7 @@
       </button>
     `;
 
+    // 1번: 연결된 노트 칩들 (꾹 눌러 순서 변경 가능)
     const groupRootId = note.parentId ? note.parentId : note.id;
     const rootNote = notes.find(n => n.id === groupRootId);
     const siblings = notes.filter(n => n.parentId === groupRootId);
@@ -2249,7 +2450,9 @@
       chipsBar.innerHTML = groupAll.map((item, idx) => {
         const isCurrent = item.id === note.id;
         return `
-          <button onclick="openNote('${item.id}')"
+          <button data-chip-id="${item.id}"
+            onpointerdown="startChipDrag(event, 'linked', '${item.id}')"
+            onclick="openNote('${item.id}')"
             class="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${
               isCurrent ? 'bg-[#EDE9FE] border border-purple-300 text-purple-950' : 'bg-white border border-gray-200 text-gray-600'
             }">
@@ -2283,11 +2486,12 @@
       displayBlocks.sort((a, b) => Number(a.done) - Number(b.done));
     }
 
+    // 6번: 사진 삽입 슬롯 클릭 시 event.stopPropagation()으로 배경 글쓰기 생성 방지
     const renderInsertSlot = (idx) => {
       if (!pendingPhotoInsertMode) return '';
       return `
-        <button type="button" onclick="selectPhotoInsertIndex(${idx})"
-          class="w-full py-2 rounded-xl border-2 border-dashed border-purple-400 bg-[#EDE9FE]/80 text-purple-950 text-xs font-bold active:scale-98 transition">
+        <button type="button" onclick="selectPhotoInsertIndex(event, ${idx})"
+          class="photo-insert-slot-btn w-full py-2 rounded-xl border-2 border-dashed border-purple-400 bg-[#EDE9FE]/80 text-purple-950 text-xs font-bold active:scale-98 transition">
           + 여기에 사진 넣기
         </button>
       `;
@@ -2301,19 +2505,25 @@
     document.getElementById('blocks-container').innerHTML = html;
 
     requestAnimationFrame(() => {
-      document.querySelectorAll('.direct-sheet-line').forEach(autoResizeSheetLine);
+      resizeAllAutoTextareas();
     });
 
+    // 11번: 하단 첫 번째 버튼 문구 -> "리스트 추가 (틀이름)"
     const lastBlock = [...note.blocks].reverse().find(b => b.type !== 'single-photo');
     const lastType = lastBlock ? lastBlock.type : draftLayout;
-    document.getElementById('quick-add-same-btn').textContent = `틀 추가 (${getLayoutLabel(lastType)})`;
+    document.getElementById('quick-add-same-btn').textContent = `리스트 추가 (${getLayoutLabel(lastType)})`;
   }
 
-  // ================= 지우기(Backspace) 시 체크박스만 지워지고 일반 메모 유지 + 엔터 시 일반 메모 유지 =================
+  // ================= 3번 & 8번: 체크리스트 추가 시 빈 메모 숨김 + 메모에서만 지우기 시 삭제 =================
   function handleMainCheckInputKeyDown(e, blockId) {
     if (e.isComposing) return;
-    const el = e.currentTarget;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSubChecklist(blockId, null, false);
+      return;
+    }
 
+    const el = e.currentTarget;
     if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
       const note = notes.find(n => n.id === currentNoteId);
       const block = note?.blocks.find(b => b.id === blockId);
@@ -2324,7 +2534,7 @@
         saveStateToDB();
         renderEditor();
         requestAnimationFrame(() => {
-          const inp = document.querySelector(`[data-block-id="${blockId}"] input[data-role="main-title"]`);
+          const inp = document.querySelector(`[data-block-id="${blockId}"] [data-role="main-title"]`);
           if (inp) {
             inp.focus();
             inp.setSelectionRange(0, 0);
@@ -2357,11 +2567,13 @@
     saveStateToDB();
     renderEditor();
     requestAnimationFrame(() => {
-      const inp = document.querySelector(`[data-sub-id="${newSubId}"] input`);
+      const inp = document.querySelector(`[data-sub-id="${newSubId}"] textarea`);
       if (inp) inp.focus();
     });
   }
 
+  // 8번: 생성된 체크리스트가 있는 경우, 체크리스트 상태에서는 체크박스만 해제(메모로 전환)되고,
+  // 오직 '메모를 입력하세요.'(isPlainMemo: true) 상태에서만 뒤로 지우기 했을 때 해당 항목이 지워짐
   function handleSubCheckKeyDown(e, blockId, subId) {
     if (e.isComposing) return;
     const el = e.currentTarget;
@@ -2383,13 +2595,14 @@
     if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
       e.preventDefault();
 
+      // 아직 체크리스트 상태라면 체크박스만 없애고 '메모를 입력하세요.'(일반 메모)로 전환
       if (!targetSub.isPlainMemo) {
         targetSub.isPlainMemo = true;
         targetSub.done = false;
         saveStateToDB();
         renderEditor();
         requestAnimationFrame(() => {
-          const sameInp = document.querySelector(`[data-sub-id="${subId}"] input`);
+          const sameInp = document.querySelector(`[data-sub-id="${subId}"] textarea`);
           if (sameInp) {
             sameInp.focus();
             sameInp.setSelectionRange(0, 0);
@@ -2398,6 +2611,7 @@
         return;
       }
 
+      // 이미 '메모를 입력하세요.'(isPlainMemo: true) 상태이고 내용이 비어 있을 때만 지우기 시 항목 삭제
       if (el.value === '') {
         const prevSubId = idx > 0 ? block.subChecks[idx - 1].id : null;
         block.subChecks.splice(idx, 1);
@@ -2406,7 +2620,7 @@
 
         requestAnimationFrame(() => {
           if (prevSubId) {
-            const prevInp = document.querySelector(`[data-sub-id="${prevSubId}"] input`);
+            const prevInp = document.querySelector(`[data-sub-id="${prevSubId}"] textarea`);
             if (prevInp) {
               prevInp.focus();
               const len = prevInp.value.length;
@@ -2414,7 +2628,7 @@
             }
           } else {
             const blockEl = document.querySelector(`[data-block-id="${blockId}"]`);
-            const fallbackInput = blockEl?.querySelector('input[placeholder*="메모"], textarea, input[type="text"]');
+            const fallbackInput = blockEl?.querySelector('[data-role="main-title"]');
             if (fallbackInput) fallbackInput.focus();
           }
         });
@@ -2459,22 +2673,22 @@
     return `
       <div class="mt-1.5 pt-1.5 border-t space-y-1" style="border-color:${theme.borderColor};">
         ${subs.map(sc => `
-          <div data-sub-id="${sc.id}" class="flex items-center gap-1.5">
+          <div data-sub-id="${sc.id}" class="flex items-start gap-1.5">
             ${sc.isPlainMemo ? '' : `
               <button type="button" onclick="${isPreview ? '' : `toggleSubCheck('${b.id}', '${sc.id}')`}"
                 style="border-color:${theme.checkBorder}; background:${sc.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-                class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0">
+                class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0 mt-1">
                 ${sc.done ? '✓' : ''}
               </button>
             `}
-            <input type="text" value="${sc.text || ''}" placeholder="${sc.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-              oninput="updateSubCheckText('${b.id}', '${sc.id}', this.value)"
+            <textarea rows="1" data-min-h="22" placeholder="${sc.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+              oninput="updateSubCheckText('${b.id}', '${sc.id}', this.value); autoResizeTextarea(this, 22)"
               onkeydown="${isPreview ? '' : `handleSubCheckKeyDown(event, '${b.id}', '${sc.id}')`}"
               style="color:${!sc.isPlainMemo && sc.done ? theme.mutedColor : theme.subColor};"
-              class="flex-1 min-w-0 text-xs bg-transparent outline-none ${!sc.isPlainMemo && sc.done ? 'line-through' : ''}" />
+              class="auto-wrap-input flex-1 min-w-0 text-xs leading-[22px] ${!sc.isPlainMemo && sc.done ? 'line-through' : ''}">${sc.text || ''}</textarea>
             ${isPreview ? '' : `
               <button type="button" onclick="deleteSubCheck('${b.id}', '${sc.id}')"
-                style="color:${theme.mutedColor};" class="text-[10px] px-1 hover:text-red-500">✕</button>
+                style="color:${theme.mutedColor};" class="text-[10px] px-1 mt-0.5 hover:text-red-500">✕</button>
             `}
           </div>
         `).join('')}
@@ -2486,6 +2700,9 @@
     const bgStyle = b.cardBg || 'rgba(255,255,255,0.95)';
     const isTransparent = bgStyle === 'transparent';
     const theme = getContrastTheme(bgStyle, parentBgColor);
+    const hasSubChecks = Array.isArray(b.subChecks) && b.subChecks.length > 0;
+    // 3번: 체크리스트가 추가되었을 때 위에 있는 메모가 비어 있으면 숨기고 바로 체크리스트가 보이도록 처리
+    const showMemoRow = !hasSubChecks || (b.memo && b.memo.trim().length > 0);
 
     const dragHandle = isPreview ? '' : `
       <div onpointerdown="startImmediateDrag(event, '${b.id}')" style="color:${theme.subColor};" class="drag-handle" title="위아래로 드래그하여 순서 변경">
@@ -2513,15 +2730,15 @@
       </button>
     `;
 
-    const addSubCheckBtn = isPreview ? '' : `
+    // 5번: '+ 체크' 대신 깔끔하게 '+'만 표시
+    const addPlusBtn = isPreview ? '' : `
       <button type="button" onclick="addSubChecklist('${b.id}', null, false)" title="체크리스트 추가"
         style="background:${theme.chipBg}; color:${theme.subColor};"
-        class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 active:scale-95">
-        + 체크
+        class="w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center shrink-0 active:scale-95">
+        +
       </button>
     `;
 
-    // 1번: 어떤 크기/비율의 사진이든 사진 중심(object-cover object-center)이 정확히 보이도록 정렬
     const stretchPhotoThumb = (photos) => {
       if (!photos || photos.length === 0) {
         return `<button onclick="${isPreview ? '' : `triggerPhotoUpload('${b.id}')`}"
@@ -2542,7 +2759,6 @@
       isTransparent ? 'shadow-none' : 'shadow-sm'
     }`;
 
-    // 2번: 단독 사진 블록 (좌측 완료 버튼 제거 -> 사진 바깥 빈 공간 클릭 시 편집 자동 완료)
     if (b.type === 'single-photo') {
       const imgW = b.photoWidth || 220;
       const src = b.photos && b.photos[0] ? b.photos[0] : '';
@@ -2558,12 +2774,10 @@
               <img src="${src}" onclick="if(!editingSinglePhotoId) openLightbox('${b.id}', 0)"
                 class="w-full h-auto rounded-2xl object-contain object-center shadow-sm cursor-pointer block" />
               ${isEditing ? `
-                <!-- 우측 상단 삭제 버튼만 유지 (좌측 완료 버튼 제거) -->
                 <button type="button" onclick="deleteBlock('${b.id}')"
                   class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">
                   ✕
                 </button>
-                <!-- 우측 하단 크기 조절 핸들 -->
                 <div onpointerdown="startSinglePhotoResize(event, '${b.id}')"
                   title="드래그하여 사진 크기 조절"
                   style="touch-action: none;"
@@ -2618,31 +2832,34 @@
       `;
     }
 
+    // 4번: 2분할 슬림바도 글이 길어지면 아랫줄로 자동 줄바꿈되도록 auto-wrap-input 적용
     if (b.type === 'split-slim') {
       return `
         <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
-          class="block-item rounded-xl px-2.5 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-center gap-1.5 transition-transform">
-          ${dragHandle}
-          <div class="flex-1 min-w-0 flex items-center gap-1.5">
+          class="block-item rounded-xl px-2.5 py-2 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} flex items-start gap-1.5 transition-transform">
+          <div class="pt-1 shrink-0">${dragHandle}</div>
+          <div class="flex-1 min-w-0 flex items-start gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
               style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
+              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0 mt-1.5">
               ${b.done ? '✓' : ''}
             </button>
-            <input type="text" value="${b.title || ''}" placeholder="리스트를 입력하세요." oninput="updateBlockField('${b.id}','title',this.value)"
+            <textarea rows="1" data-min-h="28" placeholder="리스트를 입력하세요."
+              oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 28)"
               style="color:${b.done ? theme.mutedColor : theme.titleColor};"
-              class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done ? 'line-through' : ''}" />
+              class="auto-wrap-input flex-1 min-w-0 text-xs font-semibold leading-7 ${b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
           </div>
-          <div style="background:${theme.borderColor};" class="w-[1px] h-5 shrink-0 mx-0.5"></div>
-          <div class="flex-1 min-w-0 flex items-center gap-1.5">
+          <div style="background:${theme.borderColor};" class="w-[1px] self-stretch shrink-0 mx-0.5"></div>
+          <div class="flex-1 min-w-0 flex items-start gap-1.5">
             <button onclick="${isPreview ? '' : `toggleBlockSecondDone('${b.id}')`}"
               style="border-color:${theme.checkBorder}; background:${b.done2 ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0">
+              class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] shrink-0 mt-1.5">
               ${b.done2 ? '✓' : ''}
             </button>
-            <input type="text" value="${b.title2 || ''}" placeholder="리스트를 입력하세요." oninput="updateBlockField('${b.id}','title2',this.value)"
+            <textarea rows="1" data-min-h="28" placeholder="리스트를 입력하세요."
+              oninput="updateBlockField('${b.id}','title2',this.value); autoResizeTextarea(this, 28)"
               style="color:${b.done2 ? theme.mutedColor : theme.titleColor};"
-              class="w-full min-w-0 text-xs font-semibold leading-8 bg-transparent outline-none ${b.done2 ? 'line-through' : ''}" />
+              class="auto-wrap-input flex-1 min-w-0 text-xs font-semibold leading-7 ${b.done2 ? 'line-through' : ''}">${b.title2 || ''}</textarea>
           </div>
           ${deleteBtn}
         </div>
@@ -2659,17 +2876,23 @@
             </div>
             ${stretchPhotoThumb(b.photos)}
             <div class="flex-1 min-w-0 flex flex-col justify-center">
-              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-                oninput="updateBlockField('${b.id}','title',this.value)"
-                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
-                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
-                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
-              <div class="flex items-center gap-1">
-                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
-                  style="color:${theme.subColor};"
-                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
-                ${addSubCheckBtn}
+              <div class="flex items-start gap-1">
+                <textarea rows="1" data-min-h="32" data-role="main-title" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                  oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 32)"
+                  onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                  style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                  class="auto-wrap-input flex-1 text-sm font-bold leading-8 ${!b.isPlainMemo && b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
+                ${!showMemoRow ? `<div class="pt-1">${addPlusBtn}</div>` : ''}
               </div>
+              ${showMemoRow ? `
+                <div class="flex items-start gap-1">
+                  <textarea rows="1" data-min-h="28" placeholder="메모를 입력하세요."
+                    oninput="updateBlockField('${b.id}','memo',this.value); autoResizeTextarea(this, 28)"
+                    style="color:${theme.subColor};"
+                    class="auto-wrap-input flex-1 min-w-0 text-xs leading-7">${b.memo || ''}</textarea>
+                  <div class="pt-0.5">${addPlusBtn}</div>
+                </div>
+              ` : ''}
               ${renderSubChecklistSection(b, isPreview, theme)}
             </div>
             <div class="flex items-start shrink-0">
@@ -2689,17 +2912,23 @@
               ${checkBtn}
             </div>
             <div class="flex-1 min-w-0 flex flex-col justify-center">
-              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-                oninput="updateBlockField('${b.id}','title',this.value)"
-                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
-                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
-                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
-              <div class="flex items-center gap-1">
-                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
-                  style="color:${theme.subColor};"
-                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
-                ${addSubCheckBtn}
+              <div class="flex items-start gap-1">
+                <textarea rows="1" data-min-h="32" data-role="main-title" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                  oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 32)"
+                  onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                  style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                  class="auto-wrap-input flex-1 text-sm font-bold leading-8 ${!b.isPlainMemo && b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
+                ${!showMemoRow ? `<div class="pt-1">${addPlusBtn}</div>` : ''}
               </div>
+              ${showMemoRow ? `
+                <div class="flex items-start gap-1">
+                  <textarea rows="1" data-min-h="28" placeholder="메모를 입력하세요."
+                    oninput="updateBlockField('${b.id}','memo',this.value); autoResizeTextarea(this, 28)"
+                    style="color:${theme.subColor};"
+                    class="auto-wrap-input flex-1 min-w-0 text-xs leading-7">${b.memo || ''}</textarea>
+                  <div class="pt-0.5">${addPlusBtn}</div>
+                </div>
+              ` : ''}
               ${renderSubChecklistSection(b, isPreview, theme)}
             </div>
             ${stretchPhotoThumb(b.photos)}
@@ -2719,17 +2948,23 @@
             ${dragHandle}
             ${checkBtn}
             <div class="flex-1 min-w-0">
-              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-                oninput="updateBlockField('${b.id}','title',this.value)"
-                onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
-                style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
-                class="w-full text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
-              <div class="flex items-center gap-1">
-                <input type="text" value="${b.memo}" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
-                  style="color:${theme.subColor};"
-                  class="flex-1 min-w-0 text-xs leading-8 bg-transparent outline-none" />
-                ${addSubCheckBtn}
+              <div class="flex items-start gap-1">
+                <textarea rows="1" data-min-h="32" data-role="main-title" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                  oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 32)"
+                  onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
+                  style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
+                  class="auto-wrap-input flex-1 text-sm font-bold leading-8 ${!b.isPlainMemo && b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
+                ${!showMemoRow ? `<div class="pt-1">${addPlusBtn}</div>` : ''}
               </div>
+              ${showMemoRow ? `
+                <div class="flex items-start gap-1">
+                  <textarea rows="1" data-min-h="28" placeholder="메모를 입력하세요."
+                    oninput="updateBlockField('${b.id}','memo',this.value); autoResizeTextarea(this, 28)"
+                    style="color:${theme.subColor};"
+                    class="auto-wrap-input flex-1 min-w-0 text-xs leading-7">${b.memo || ''}</textarea>
+                  <div class="pt-0.5">${addPlusBtn}</div>
+                </div>
+              ` : ''}
               ${renderSubChecklistSection(b, isPreview, theme)}
             </div>
             ${deleteBtn}
@@ -2761,17 +2996,20 @@
           ${dragHandle}
           ${checkBtn}
           <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-1">
-              <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-                oninput="updateBlockField('${b.id}','title',this.value)"
+            <div class="flex items-start justify-between gap-1">
+              <textarea rows="1" data-min-h="32" data-role="main-title" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+                oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 32)"
                 onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
                 style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
-                class="flex-1 min-w-0 text-sm font-bold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
-              ${addSubCheckBtn}
+                class="auto-wrap-input flex-1 min-w-0 text-sm font-bold leading-8 ${!b.isPlainMemo && b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
+              <div class="pt-1">${addPlusBtn}</div>
             </div>
-            <textarea rows="2" placeholder="메모를 입력하세요." oninput="updateBlockField('${b.id}','memo',this.value)"
-              style="color:${theme.subColor};"
-              class="w-full text-xs leading-8 bg-transparent outline-none resize-none">${b.memo}</textarea>
+            ${showMemoRow ? `
+              <textarea rows="1" data-min-h="28" placeholder="메모를 입력하세요."
+                oninput="updateBlockField('${b.id}','memo',this.value); autoResizeTextarea(this, 28)"
+                style="color:${theme.subColor};"
+                class="auto-wrap-input w-full text-xs leading-7">${b.memo || ''}</textarea>
+            ` : ''}
             ${renderSubChecklistSection(b, isPreview, theme)}
           </div>
           ${deleteBtn}
@@ -2779,24 +3017,25 @@
       `;
     }
 
+    // 한줄 슬림바 (길어지면 아랫줄로 자동 줄바꿈)
     return `
       <div data-block-id="${b.id}" ${longPressAttr} style="background-color:${bgStyle}; border-color:${theme.borderColor};"
         class="block-item rounded-xl px-3 py-1.5 border ${isTransparent ? 'shadow-none' : 'shadow-sm'} transition-transform">
-        <div class="flex items-center gap-2">
-          ${dragHandle}
+        <div class="flex items-start gap-2">
+          <div class="pt-0.5 shrink-0">${dragHandle}</div>
           ${b.isPlainMemo ? '' : `
             <button onclick="${isPreview ? '' : `toggleBlockDone('${b.id}')`}"
               style="border-color:${theme.checkBorder}; background:${b.done ? theme.checkDoneBg : 'transparent'}; color:${theme.checkDoneText};"
-              class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0">
+              class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-1.5">
               ${b.done ? '✓' : ''}
             </button>
           `}
-          <input data-role="main-title" type="text" value="${b.title}" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
-            oninput="updateBlockField('${b.id}','title',this.value)"
+          <textarea rows="1" data-min-h="32" data-role="main-title" placeholder="${b.isPlainMemo ? '메모를 입력하세요.' : '리스트를 입력하세요.'}"
+            oninput="updateBlockField('${b.id}','title',this.value); autoResizeTextarea(this, 32)"
             onkeydown="${isPreview ? '' : `handleMainCheckInputKeyDown(event, '${b.id}')`}"
             style="color:${!b.isPlainMemo && b.done ? theme.mutedColor : theme.titleColor};"
-            class="flex-1 text-xs font-semibold leading-8 bg-transparent outline-none ${!b.isPlainMemo && b.done ? 'line-through' : ''}" />
-          ${addSubCheckBtn}
+            class="auto-wrap-input flex-1 text-xs font-semibold leading-8 ${!b.isPlainMemo && b.done ? 'line-through' : ''}">${b.title || ''}</textarea>
+          <div class="pt-1 shrink-0">${addPlusBtn}</div>
           ${deleteBtn}
         </div>
         ${renderSubChecklistSection(b, isPreview, theme)}
@@ -3093,11 +3332,12 @@
       subChecks: []
     };
     document.getElementById('preview-block-render').innerHTML = renderBlockHTML(sampleBlock, true, draftColor);
+    requestAnimationFrame(() => resizeAllAutoTextareas());
   }
 
   function confirmCreateNote() {
     const newId = 'n' + Date.now();
-    notes.unshift({
+    notes.push({
       id: newId,
       title: '',
       parentId: activeFolderId || null,
@@ -3124,7 +3364,7 @@
     openNote(newId, true);
   }
 
-  // ================= 에디터 내 새 틀 추가 모달 =================
+  // ================= 에디터 내 새로운 리스트 추가 모달 =================
   function addSameAsLastBlock() {
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
