@@ -288,7 +288,7 @@
           <button onclick="openSyncHubModal()" id="sync-hub-badge"
             class="px-2.5 py-1 rounded-full bg-[#EDE9FE] border border-[#DDD6FE] text-purple-950 text-[11px] font-bold shrink-0 active:scale-95 flex items-center gap-1.5">
             <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-            <span id="sync-hub-badge-text">동기화 · 공유 ▾</span>
+            <span id="sync-hub-badge-text">동기화 · 백업 ▾</span>
           </button>
         </div>
         <input id="folder-title-input" type="text" placeholder="묶음 제목 입력..."
@@ -345,7 +345,6 @@
         ← 홈
       </button>
       <div class="flex items-center gap-2">
-        <!-- 현재 노트 다중 공유 설정 버튼 -->
         <button onclick="openNoteShareSelector(currentNoteId)" id="editor-share-pill"
           class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition active:scale-95 max-w-[140px] truncate">
           비공개
@@ -404,7 +403,6 @@
         <button onclick="closeEditorDrawer()" class="w-7 h-7 rounded-lg bg-[#EDE9FE] text-xs font-bold text-purple-950">✕</button>
       </div>
 
-      <!-- 다중 공유방 설정 버튼 -->
       <div class="mb-5">
         <div class="text-xs font-bold text-gray-500 mb-2">공유 대상 설정 (다중 방 가능)</div>
         <button onclick="closeEditorDrawer(); openNoteShareSelector(currentNoteId);" id="drawer-share-toggle-btn"
@@ -526,11 +524,11 @@
     </div>
   </div>
 
-  <!-- ================= 5. 내 기기 동기화 & 다중 공유방 관리 모달 ================= -->
+  <!-- ================= 5. 내 기기 동기화 · 다중 공유방 · 안전 백업 모달 ================= -->
   <div id="sync-hub-modal" class="hidden fixed inset-0 bg-black/45 z-50 flex items-center justify-center p-4" onclick="closeSyncHubModal(event)">
     <div class="w-full max-w-[380px] bg-white rounded-3xl p-5 shadow-2xl max-h-[88dvh] overflow-y-auto no-scrollbar" onclick="event.stopPropagation()">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-base font-bold text-gray-900">내 기기 동기화 및 공유방 관리</h3>
+        <h3 class="text-base font-bold text-gray-900">내 기기 동기화 및 백업 관리</h3>
         <button onclick="closeSyncHubModal()" class="w-7 h-7 rounded-lg bg-gray-100 text-xs font-bold text-gray-600">✕</button>
       </div>
 
@@ -538,11 +536,11 @@
         연결 상태 확인 중...
       </div>
 
-      <!-- 1) 내 개인 백업 코드 (크롬·네이버·다른 기기 연동용) -->
-      <div class="p-3.5 rounded-2xl bg-[#F5F3FF] border border-[#DDD6FE] mb-4">
-        <div class="text-xs font-bold text-purple-950 mb-1">1. 내 개인 동기화 코드 (비공개 노트 연동)</div>
+      <!-- 1) 내 개인 백업 코드 -->
+      <div class="p-3.5 rounded-2xl bg-[#F5F3FF] border border-[#DDD6FE] mb-3.5">
+        <div class="text-xs font-bold text-purple-950 mb-1">1. 내 개인 동기화 코드 (비공개 노트 개별 PATCH 저장)</div>
         <p class="text-[11px] text-purple-900/75 mb-2.5 leading-relaxed">
-          크롬·네이버 앱이나 다른 기기에서도 내 비공개 노트를 똑같이 보려면 나만의 비밀 코드를 입력하세요. (미입력 시 현재 브라우저에만 저장)
+          노트별 개별 저장(PATCH) 방식으로 동작하여 네트워크가 끊겨도 기존 노트를 덮어쓰지 않습니다.
         </p>
         <div class="flex gap-2">
           <input id="personal-vault-input" type="text" placeholder="예: sera_my_0419"
@@ -556,8 +554,8 @@
         </button>
       </div>
 
-      <!-- 2) 참여한 공유방 목록 (가족방, 친구방 등 다중 관리) -->
-      <div class="p-3.5 rounded-2xl bg-gray-50 border border-gray-200">
+      <!-- 2) 참여한 공유방 목록 -->
+      <div class="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 mb-3.5">
         <div class="text-xs font-bold text-gray-900 mb-1">2. 참여한 공유방 목록 (여러 방 추가 가능)</div>
         <p class="text-[11px] text-gray-500 mb-2.5 leading-relaxed">
           상대방과 나눌 방 이름을 추가한 뒤, 각 노트의 점 3개(⋮) → <strong>[공유 설정]</strong>에서 원하는 방을 선택하세요.
@@ -569,7 +567,23 @@
             + 추가
           </button>
         </div>
-        <div id="joined-rooms-list" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar"></div>
+        <div id="joined-rooms-list" class="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar"></div>
+      </div>
+
+      <!-- 3) 파일 백업 및 복원 (JSON) -->
+      <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+        <div class="text-xs font-bold text-emerald-950 mb-1">3. 노트 전체 안전 백업 및 복원 (파일 저장)</div>
+        <p class="text-[11px] text-emerald-900/80 mb-2.5 leading-relaxed">
+          브라우저 캐시가 삭제되어도 언제든 즉시 되살릴 수 있도록 전체 노트를 파일(.json)로 저장하거나 불러옵니다.
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportAllNotesBackupJSON()" class="py-2.5 px-3 bg-emerald-600 text-white rounded-xl text-xs font-bold active:scale-95">
+            백업 파일 저장
+          </button>
+          <button onclick="triggerRestoreBackupJSON()" class="py-2.5 px-3 bg-white border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold active:scale-95">
+            백업 불러오기
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -704,6 +718,7 @@
 <input type="file" id="hidden-file-input" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)" />
 <input type="file" id="single-gallery-input" accept="image/*" class="hidden" onchange="handleSinglePhotoUpload(event)" />
 <input type="file" id="single-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleSinglePhotoUpload(event)" />
+<input type="file" id="backup-restore-input" accept=".json,application/json" class="hidden" onchange="handleRestoreBackupJSON(event)" />
 
 <script>
   // =========================================================================
@@ -712,25 +727,25 @@
   // =========================================================================
   const FIREBASE_DB_URL = "https://checklist-f6f5b-default-rtdb.firebaseio.com/";
 
-  const DB_NAME = 'PostitHybridApp_DB_v9';
+  const DB_NAME = 'PostitHybridApp_DB_v10';
   const STORE_NAME = 'localPersonalVault';
-  const LOCAL_VAULT_KEY = 'personal_main_vault_v9';
-  const SYNC_META_KEY = 'postit_sync_meta_v9';
+  const LOCAL_VAULT_KEY = 'personal_main_vault_v10';
+  const SYNC_META_KEY = 'postit_sync_meta_v10';
   let dbInstance = null;
 
-  // 내 기기 동기화 코드 (비어있으면 로컬 브라우저 전용, 입력 시 크롬/네이버/다른 기기 실시간 동기화)
   let personalVaultCode = '';
-  // 내가 입장한 다중 공유방 목록 (예: ['가족방', '친구방'])
   let joinedSharedRooms = [];
 
   const CLIENT_INSTANCE_ID = 'client_' + Math.random().toString(36).slice(2, 10);
-  let lastPersonalCloudTs = 0;
-  let lastRoomCloudTsMap = {};
+  let isInitialCloudHydrated = false;
+  let dirtyNoteIdsForCloud = new Set();
+  let deletedNoteIdsForCloud = new Set();
+  let dirtyRoomsForCloud = new Set();
+
   let cloudSaveDebounceTimer = null;
   let activeEventSources = {};
   let cloudPollingTimer = null;
   let isCloudConnected = false;
-
   let shareSelectorTargetNoteId = null;
 
   function getCleanFirebaseUrl() {
@@ -742,9 +757,22 @@
     return encodeURIComponent(clean).replace(/[.#$\[\]]/g, '_');
   }
 
+  // 부모 폴더가 삭제되었거나 연결이 끊긴 '고아 노트'를 자동으로 홈 화면(parentId = null)으로 복구
+  function repairOrphanNotes() {
+    const validIds = new Set(notes.map(n => n.id));
+    let repaired = false;
+    notes.forEach(n => {
+      if (n.parentId && (!validIds.has(n.parentId) || n.parentId === n.id)) {
+        n.parentId = null;
+        repaired = true;
+      }
+    });
+    if (repaired) saveLocalVault();
+  }
+
   function loadSyncMeta() {
     try {
-      const raw = localStorage.getItem(SYNC_META_KEY);
+      const raw = localStorage.getItem(SYNC_META_KEY) || localStorage.getItem('postit_sync_meta_v9');
       if (raw) {
         const parsed = JSON.parse(raw);
         personalVaultCode = parsed.personalVaultCode || '';
@@ -785,7 +813,7 @@
       } else if (joinedSharedRooms.length > 0) {
         badgeText.textContent = `공유방 ${joinedSharedRooms.length}개 ▾`;
       } else {
-        badgeText.textContent = `동기화 · 공유 ▾`;
+        badgeText.textContent = `동기화 · 백업 ▾`;
       }
     }
 
@@ -803,13 +831,13 @@
     if (banner) {
       if (!getCleanFirebaseUrl()) {
         banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-4';
-        banner.textContent = '로컬 전용 모드 (코드 상단 FIREBASE_DB_URL 입력 시 동기화 활성)';
+        banner.textContent = '로컬 보호 모드 (아래 3번 파일 백업으로 언제든 저장 가능)';
       } else if (!hasAnyCloudTarget) {
         banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 mb-4';
         banner.textContent = '현재 기기 단독 사용 중 (개인 코드나 공유방을 설정하세요)';
       } else if (connected) {
         banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 mb-4';
-        banner.textContent = customText || `클라우드 실시간 동기화 연결됨`;
+        banner.textContent = customText || `안전 개별 동기화(PATCH) 연결됨`;
       } else {
         banner.className = 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 mb-4';
         banner.textContent = customText || '클라우드 연결 확인 중...';
@@ -842,6 +870,7 @@
         title: '앱 사용 설명서',
         parentId: null,
         sharedRooms: [],
+        updatedAt: Date.now(),
         bgColor: '#FEF9C3',
         paper: 'grid',
         blocks: [
@@ -850,7 +879,7 @@
             type: 'plain-text',
             done: false,
             title: '',
-            memo: '1. 상단 [동기화 · 공유]에서 개인 동기화 코드를 넣으면 같은 폰 다른 브라우저나 새 폰에서도 내 노트가 이어집니다.',
+            memo: '1. 상단 [동기화 · 백업]에서 개인 동기화 코드를 넣으면 노트별 개별(PATCH) 방식으로 안전하게 동기화됩니다.',
             cardBg: 'transparent',
             photos: [],
             subChecks: []
@@ -864,7 +893,7 @@
             cardBg: 'rgba(255,255,255,0.92)',
             photos: [],
             subChecks: [
-              { id: 'sc_1', text: '체크박스 해제 후 메모에서 지우기 시 줄이 삭제됩니다.', done: false, isPlainMemo: false }
+              { id: 'sc_1', text: '상단 [동기화 · 백업] → [백업 파일 저장]으로 언제든 파일 백업이 가능합니다.', done: false, isPlainMemo: false }
             ]
           },
           {
@@ -911,7 +940,7 @@
       } catch (_) {}
     }
     try {
-      localStorage.setItem('postit_local_vault_backup_v9', JSON.stringify(localPayload));
+      localStorage.setItem('postit_local_vault_backup_v10', JSON.stringify(localPayload));
     } catch (_) {}
   }
 
@@ -919,7 +948,7 @@
     return new Promise((resolve) => {
       const tryLocalFallback = () => {
         try {
-          const raw = localStorage.getItem('postit_local_vault_backup_v9');
+          const raw = localStorage.getItem('postit_local_vault_backup_v10') || localStorage.getItem('postit_local_vault_backup_v9');
           resolve(raw ? JSON.parse(raw) : null);
         } catch (_) {
           resolve(null);
@@ -944,121 +973,175 @@
     });
   }
 
-  // 상태 변경 시 로컬 저장 + (개인 동기화 코드가 있으면 개인 보관함 동기화 + 각 공유방별 해당 노트만 동기화)
-  function saveStateToDB(skipCloudPush = false, specificRoomsToSync = null) {
+  // ================= 노트별 개별(PATCH) 클라우드 저장 (전체 덮어쓰기 방지) =================
+  function saveStateToDB(modifiedNoteOrList = null, extraRoomsToSync = []) {
     saveLocalVault();
 
-    if (skipCloudPush || !getCleanFirebaseUrl()) return;
+    if (!getCleanFirebaseUrl() || !isInitialCloudHydrated) return;
 
     const nowTs = Date.now();
+    if (modifiedNoteOrList) {
+      const list = Array.isArray(modifiedNoteOrList) ? modifiedNoteOrList : [modifiedNoteOrList];
+      list.forEach(n => {
+        if (!n || !n.id) return;
+        n.updatedAt = nowTs;
+        n.updatedBy = CLIENT_INSTANCE_ID;
+        dirtyNoteIdsForCloud.add(n.id);
+        deletedNoteIdsForCloud.delete(n.id);
+        getNoteSharedRooms(n).forEach(r => dirtyRoomsForCloud.add(r));
+      });
+    }
+
+    if (Array.isArray(extraRoomsToSync)) {
+      extraRoomsToSync.forEach(r => { if (r) dirtyRoomsForCloud.add(r); });
+    }
+
     clearTimeout(cloudSaveDebounceTimer);
     cloudSaveDebounceTimer = setTimeout(() => {
-      if (personalVaultCode) {
-        lastPersonalCloudTs = nowTs;
-        pushPersonalVaultToCloud(nowTs);
+      flushPendingPatchToCloud();
+    }, 320);
+  }
+
+  async function flushPendingPatchToCloud() {
+    const baseUrl = getCleanFirebaseUrl();
+    if (!baseUrl || !isInitialCloudHydrated) return;
+
+    const targetNoteIds = Array.from(dirtyNoteIdsForCloud);
+    const targetDeleteIds = Array.from(deletedNoteIdsForCloud);
+    const targetRooms = Array.from(dirtyRoomsForCloud);
+
+    dirtyNoteIdsForCloud.clear();
+    deletedNoteIdsForCloud.clear();
+    dirtyRoomsForCloud.clear();
+
+    // 1) 개인 보관함: 전체 배열 덮어쓰기(PUT) 금지 -> 수정된 노트 ID 키만 PATCH
+    if (personalVaultCode && (targetNoteIds.length > 0 || targetDeleteIds.length > 0)) {
+      const vaultKey = encodeFirebaseKey(personalVaultCode);
+      const patchBody = {};
+      targetNoteIds.forEach(id => {
+        const noteObj = notes.find(n => n.id === id);
+        if (noteObj && getNoteSharedRooms(noteObj).length === 0) {
+          patchBody[encodeFirebaseKey(id)] = noteObj;
+        } else {
+          // 공유방으로 이동했거나 삭제된 경우 개인 보관함 맵에서 null로 제거
+          patchBody[encodeFirebaseKey(id)] = null;
+        }
+      });
+      targetDeleteIds.forEach(id => {
+        patchBody[encodeFirebaseKey(id)] = null;
+      });
+
+      if (Object.keys(patchBody).length > 0) {
+        try {
+          const res = await fetch(`${baseUrl}/safe_vaults/${vaultKey}/notesMap.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchBody)
+          });
+          if (res.ok) updateSyncStatusIndicator(true);
+        } catch (_) {
+          updateSyncStatusIndicator(false, '오프라인 상태 (로컬 안전 저장됨)');
+        }
       }
-      const roomsToUpdate = specificRoomsToSync || joinedSharedRooms;
-      roomsToUpdate.forEach(roomName => {
-        lastRoomCloudTsMap[roomName] = nowTs;
-        pushSingleRoomToCloud(roomName, nowTs);
+    }
+
+    // 2) 다중 공유방: 해당 방의 notesMap에 변경된 노트 ID만 개별 PATCH
+    for (const roomName of targetRooms) {
+      const roomKey = encodeFirebaseKey(roomName);
+      const roomPatch = {};
+
+      targetNoteIds.forEach(id => {
+        const noteObj = notes.find(n => n.id === id);
+        if (noteObj && getNoteSharedRooms(noteObj).includes(roomName)) {
+          const hasSharedParentInRoom = noteObj.parentId && notes.some(
+            p => p.id === noteObj.parentId && getNoteSharedRooms(p).includes(roomName)
+          );
+          roomPatch[encodeFirebaseKey(id)] = {
+            ...noteObj,
+            roomParentId: hasSharedParentInRoom ? noteObj.parentId : null
+          };
+        } else {
+          roomPatch[encodeFirebaseKey(id)] = null;
+        }
       });
-    }, 280);
-  }
-
-  async function pushPersonalVaultToCloud(timestamp = Date.now()) {
-    const baseUrl = getCleanFirebaseUrl();
-    if (!baseUrl || !personalVaultCode) return;
-
-    // 내 기기들끼리 공유할 개인 전용 데이터 (비공개 노트 + 내가 참여한 방 목록)
-    const privateNotes = notes.filter(n => getNoteSharedRooms(n).length === 0);
-    const payload = {
-      privateNotes,
-      trashedNotes,
-      recentTabIds,
-      joinedSharedRooms,
-      baseBgColors,
-      baseBlockColors,
-      cpRecentColors,
-      updatedAt: timestamp,
-      updatedBy: CLIENT_INSTANCE_ID
-    };
-
-    const key = encodeFirebaseKey(personalVaultCode);
-    try {
-      const res = await fetch(`${baseUrl}/personal_vaults/${key}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      targetDeleteIds.forEach(id => {
+        roomPatch[encodeFirebaseKey(id)] = null;
       });
-      if (res.ok) updateSyncStatusIndicator(true);
-    } catch (_) {
-      updateSyncStatusIndicator(false, '오프라인 상태 (로컬 저장됨)');
+
+      if (Object.keys(roomPatch).length > 0) {
+        try {
+          const res = await fetch(`${baseUrl}/safe_rooms/${roomKey}/notesMap.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(roomPatch)
+          });
+          if (res.ok) updateSyncStatusIndicator(true);
+        } catch (_) {
+          updateSyncStatusIndicator(false, '오프라인 상태 (로컬 안전 저장됨)');
+        }
+      }
     }
   }
 
-  async function pushSingleRoomToCloud(roomName, timestamp = Date.now()) {
-    const baseUrl = getCleanFirebaseUrl();
-    if (!baseUrl || !roomName) return;
-
-    // 오직 해당 roomName이 sharedRooms에 포함된 노트만 추출하여 전송
-    const roomNotes = notes.filter(n => getNoteSharedRooms(n).includes(roomName)).map(n => {
-      const hasSharedParentInSameRoom = n.parentId && notes.some(
-        p => p.id === n.parentId && getNoteSharedRooms(p).includes(roomName)
-      );
-      return {
-        ...n,
-        roomParentId: hasSharedParentInSameRoom ? n.parentId : null
-      };
-    });
-
-    const payload = {
-      roomNotes,
-      updatedAt: timestamp,
-      updatedBy: CLIENT_INSTANCE_ID
-    };
-
-    const roomKey = encodeFirebaseKey(roomName);
-    try {
-      const res = await fetch(`${baseUrl}/multi_rooms/${roomKey}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) updateSyncStatusIndicator(true);
-    } catch (_) {
-      updateSyncStatusIndicator(false, '오프라인 상태 (로컬 저장됨)');
-    }
-  }
-
-  async function fetchPersonalVaultFromCloud(code) {
+  async function fetchSafePersonalVault(code) {
     const baseUrl = getCleanFirebaseUrl();
     if (!baseUrl || !code) return null;
+    const key = encodeFirebaseKey(code);
     try {
-      const res = await fetch(`${baseUrl}/personal_vaults/${encodeFirebaseKey(code)}.json`);
-      if (!res.ok) return null;
-      const data = await res.json();
+      // 신규 safe_vaults 경로 우선 조회, 없으면 구버전 personal_vaults 호환 조회
+      const res = await fetch(`${baseUrl}/safe_vaults/${key}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.notesMap) {
+          updateSyncStatusIndicator(true);
+          return Object.values(data.notesMap).filter(Boolean);
+        }
+      }
+      const legacyRes = await fetch(`${baseUrl}/personal_vaults/${key}.json`);
+      if (legacyRes.ok) {
+        const legacyData = await legacyRes.json();
+        if (legacyData && Array.isArray(legacyData.privateNotes)) {
+          updateSyncStatusIndicator(true);
+          return legacyData.privateNotes;
+        }
+      }
       updateSyncStatusIndicator(true);
-      return data;
+      return [];
     } catch (_) {
       return null;
     }
   }
 
-  async function fetchSingleRoomFromCloud(roomName) {
+  async function fetchSafeRoom(roomName) {
     const baseUrl = getCleanFirebaseUrl();
     if (!baseUrl || !roomName) return null;
+    const key = encodeFirebaseKey(roomName);
     try {
-      const res = await fetch(`${baseUrl}/multi_rooms/${encodeFirebaseKey(roomName)}.json`);
-      if (!res.ok) return null;
-      const data = await res.json();
+      const res = await fetch(`${baseUrl}/safe_rooms/${key}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.notesMap) {
+          updateSyncStatusIndicator(true);
+          return Object.values(data.notesMap).filter(Boolean);
+        }
+      }
+      const legacyRes = await fetch(`${baseUrl}/multi_rooms/${key}.json`);
+      if (legacyRes.ok) {
+        const legacyData = await legacyRes.json();
+        if (legacyData && Array.isArray(legacyData.roomNotes)) {
+          updateSyncStatusIndicator(true);
+          return legacyData.roomNotes;
+        }
+      }
       updateSyncStatusIndicator(true);
-      return data;
+      return [];
     } catch (_) {
       return null;
     }
   }
 
   function preserveFocusAndRerender() {
+    repairOrphanNotes();
     const activeEl = document.activeElement;
     const activeBlockId = activeEl?.closest('[data-block-id]')?.getAttribute('data-block-id') || null;
     const activeSubId = activeEl?.closest('[data-sub-id]')?.getAttribute('data-sub-id') || null;
@@ -1095,90 +1178,86 @@
     }
   }
 
-  function applyIncomingPersonalVault(data) {
-    if (!data || !Array.isArray(data.privateNotes)) return;
-    if (data.updatedBy === CLIENT_INSTANCE_ID) return;
-    if (data.updatedAt && data.updatedAt <= lastPersonalCloudTs) return;
+  // 안전 병합: 절대 기존 로컬 노트를 일괄 삭제하지 않고, ID별로 최신 타임스탬프만 추가/갱신
+  function mergeIncomingVaultNotes(incomingList) {
+    if (!Array.isArray(incomingList)) return;
+    let changed = false;
 
-    lastPersonalCloudTs = data.updatedAt || Date.now();
+    incomingList.forEach(remoteNote => {
+      if (!remoteNote || !remoteNote.id) return;
+      if (deletedNoteIdsForCloud.has(remoteNote.id)) return;
+      if (trashedNotes.some(t => t.id === remoteNote.id)) return;
 
-    const currentSharedNotes = notes.filter(n => getNoteSharedRooms(n).length > 0);
-    const incomingPrivate = data.privateNotes.map(pn => ({ ...pn, sharedRooms: [] }));
-
-    notes = [...incomingPrivate, ...currentSharedNotes];
-    if (Array.isArray(data.trashedNotes)) trashedNotes = data.trashedNotes;
-    if (Array.isArray(data.recentTabIds)) recentTabIds = data.recentTabIds;
-    if (Array.isArray(data.baseBgColors)) baseBgColors = data.baseBgColors;
-    if (Array.isArray(data.baseBlockColors)) baseBlockColors = data.baseBlockColors;
-    if (Array.isArray(data.cpRecentColors)) cpRecentColors = data.cpRecentColors;
-
-    // 다른 내 기기에서 새로 입장한 공유방이 있다면 자동으로 구독 목록에 추가
-    if (Array.isArray(data.joinedSharedRooms)) {
-      let roomsChanged = false;
-      data.joinedSharedRooms.forEach(r => {
-        if (!joinedSharedRooms.includes(r)) {
-          joinedSharedRooms.push(r);
-          roomsChanged = true;
-        }
-      });
-      if (roomsChanged) {
-        saveSyncMeta();
-        rebuildAllCloudListeners();
-      }
-    }
-
-    saveLocalVault();
-    preserveFocusAndRerender();
-  }
-
-  function applyIncomingRoomData(roomName, data) {
-    if (!data || !Array.isArray(data.roomNotes)) return;
-    if (data.updatedBy === CLIENT_INSTANCE_ID) return;
-    const prevTs = lastRoomCloudTsMap[roomName] || 0;
-    if (data.updatedAt && data.updatedAt <= prevTs) return;
-
-    lastRoomCloudTsMap[roomName] = data.updatedAt || Date.now();
-
-    const incomingIds = new Set(data.roomNotes.map(rn => rn.id));
-
-    // 기존 notes에서 이 방(roomName)에만 속해 있던 노트는 제거/갱신, 다른 방에도 속해 있으면 방 태그만 조정
-    const nextNotes = [];
-    notes.forEach(existing => {
-      const rooms = getNoteSharedRooms(existing);
-      if (!rooms.includes(roomName)) {
-        nextNotes.push(existing);
-      } else if (!incomingIds.has(existing.id)) {
-        // 상대방이 이 방에서 해당 노트를 삭제/공유해제했을 경우
-        const remainingRooms = rooms.filter(r => r !== roomName);
-        if (remainingRooms.length > 0) {
-          nextNotes.push({ ...existing, sharedRooms: remainingRooms });
+      const localIdx = notes.findIndex(n => n.id === remoteNote.id);
+      if (localIdx === -1) {
+        notes.push({ ...remoteNote, sharedRooms: [] });
+        changed = true;
+      } else {
+        const localNote = notes[localIdx];
+        const remoteTs = remoteNote.updatedAt || 0;
+        const localTs = localNote.updatedAt || 0;
+        if (remoteTs > localTs && remoteNote.updatedBy !== CLIENT_INSTANCE_ID) {
+          notes[localIdx] = { ...remoteNote, sharedRooms: [] };
+          changed = true;
         }
       }
     });
 
-    // 수신된 방 노트 병합 (다중 공유방 태그 보존)
-    data.roomNotes.forEach(rn => {
-      const localMatch = notes.find(n => n.id === rn.id);
+    if (changed) {
+      repairOrphanNotes();
+      saveLocalVault();
+      preserveFocusAndRerender();
+    }
+  }
+
+  function mergeIncomingRoomNotes(roomName, incomingList) {
+    if (!Array.isArray(incomingList)) return;
+    let changed = false;
+
+    incomingList.forEach(remoteNote => {
+      if (!remoteNote || !remoteNote.id) return;
+      if (deletedNoteIdsForCloud.has(remoteNote.id)) return;
+
+      const localIdx = notes.findIndex(n => n.id === remoteNote.id);
       const mergedRoomsSet = new Set([
-        ...(localMatch ? getNoteSharedRooms(localMatch) : []),
-        ...(Array.isArray(rn.sharedRooms) ? rn.sharedRooms : []),
+        ...(localIdx !== -1 ? getNoteSharedRooms(notes[localIdx]) : []),
+        ...(Array.isArray(remoteNote.sharedRooms) ? remoteNote.sharedRooms : []),
         roomName
       ]);
 
-      const preservedParentId = (localMatch && localMatch.parentId && nextNotes.some(p => p.id === localMatch.parentId))
-        ? localMatch.parentId
-        : (rn.roomParentId || null);
-
-      nextNotes.push({
-        ...rn,
-        sharedRooms: Array.from(mergedRoomsSet),
-        parentId: preservedParentId
-      });
+      if (localIdx === -1) {
+        notes.push({
+          ...remoteNote,
+          sharedRooms: Array.from(mergedRoomsSet),
+          parentId: remoteNote.roomParentId || null
+        });
+        changed = true;
+      } else {
+        const localNote = notes[localIdx];
+        const remoteTs = remoteNote.updatedAt || 0;
+        const localTs = localNote.updatedAt || 0;
+        if (remoteTs > localTs && remoteNote.updatedBy !== CLIENT_INSTANCE_ID) {
+          const preservedParentId = (localNote.parentId && notes.some(p => p.id === localNote.parentId))
+            ? localNote.parentId
+            : (remoteNote.roomParentId || null);
+          notes[localIdx] = {
+            ...remoteNote,
+            sharedRooms: Array.from(mergedRoomsSet),
+            parentId: preservedParentId
+          };
+          changed = true;
+        } else if (!getNoteSharedRooms(localNote).includes(roomName)) {
+          localNote.sharedRooms = Array.from(mergedRoomsSet);
+          changed = true;
+        }
+      }
     });
 
-    notes = nextNotes;
-    saveLocalVault();
-    preserveFocusAndRerender();
+    if (changed) {
+      repairOrphanNotes();
+      saveLocalVault();
+      preserveFocusAndRerender();
+    }
   }
 
   function stopAllCloudListeners() {
@@ -1201,56 +1280,53 @@
     }
 
     if (window.EventSource) {
-      // 1) 개인 보관함 실시간 스트림
       if (personalVaultCode) {
-        const pUrl = `${baseUrl}/personal_vaults/${encodeFirebaseKey(personalVaultCode)}.json`;
+        const pUrl = `${baseUrl}/safe_vaults/${encodeFirebaseKey(personalVaultCode)}/notesMap.json`;
         try {
           const es = new EventSource(pUrl);
-          es.addEventListener('put', (e) => {
+          es.addEventListener('put', () => {
             updateSyncStatusIndicator(true);
-            try {
-              const parsed = JSON.parse(e.data);
-              if (parsed && parsed.path === '/' && parsed.data) applyIncomingPersonalVault(parsed.data);
-              else fetchPersonalVaultFromCloud(personalVaultCode).then(d => d && applyIncomingPersonalVault(d));
-            } catch (_) {}
+            fetchSafePersonalVault(personalVaultCode).then(list => list && mergeIncomingVaultNotes(list));
+          });
+          es.addEventListener('patch', () => {
+            updateSyncStatusIndicator(true);
+            fetchSafePersonalVault(personalVaultCode).then(list => list && mergeIncomingVaultNotes(list));
           });
           activeEventSources['__personal__'] = es;
         } catch (_) {}
       }
 
-      // 2) 참여한 모든 다중 공유방 실시간 스트림
       joinedSharedRooms.forEach(roomName => {
-        const rUrl = `${baseUrl}/multi_rooms/${encodeFirebaseKey(roomName)}.json`;
+        const rUrl = `${baseUrl}/safe_rooms/${encodeFirebaseKey(roomName)}/notesMap.json`;
         try {
           const es = new EventSource(rUrl);
-          es.addEventListener('put', (e) => {
+          es.addEventListener('put', () => {
             updateSyncStatusIndicator(true);
-            try {
-              const parsed = JSON.parse(e.data);
-              if (parsed && parsed.path === '/' && parsed.data) applyIncomingRoomData(roomName, parsed.data);
-              else fetchSingleRoomFromCloud(roomName).then(d => d && applyIncomingRoomData(roomName, d));
-            } catch (_) {}
+            fetchSafeRoom(roomName).then(list => list && mergeIncomingRoomNotes(roomName, list));
+          });
+          es.addEventListener('patch', () => {
+            updateSyncStatusIndicator(true);
+            fetchSafeRoom(roomName).then(list => list && mergeIncomingRoomNotes(roomName, list));
           });
           activeEventSources[`room_${roomName}`] = es;
         } catch (_) {}
       });
     }
 
-    // 절전 복귀 및 안정성을 위한 보조 주기 폴링
     cloudPollingTimer = setInterval(async () => {
-      if (document.hidden) return;
+      if (document.hidden || !isInitialCloudHydrated) return;
       if (personalVaultCode) {
-        const pData = await fetchPersonalVaultFromCloud(personalVaultCode);
-        if (pData) applyIncomingPersonalVault(pData);
+        const pList = await fetchSafePersonalVault(personalVaultCode);
+        if (pList) mergeIncomingVaultNotes(pList);
       }
       for (const roomName of joinedSharedRooms) {
-        const rData = await fetchSingleRoomFromCloud(roomName);
-        if (rData) applyIncomingRoomData(roomName, rData);
+        const rList = await fetchSafeRoom(roomName);
+        if (rList) mergeIncomingRoomNotes(roomName, rList);
       }
-    }, 4000);
+    }, 4500);
   }
 
-  // ================= 동기화 허브 모달 (개인 코드 + 다중 방 관리) =================
+  // ================= 동기화 허브 · 파일 백업/복원 모달 =================
   function openSyncHubModal() {
     document.getElementById('personal-vault-input').value = personalVaultCode;
     renderJoinedRoomsList();
@@ -1273,7 +1349,7 @@
     listEl.innerHTML = joinedSharedRooms.map(room => `
       <div class="flex justify-between items-center px-3 py-2 bg-white rounded-xl border border-gray-200">
         <span class="text-xs font-bold text-gray-800 truncate">${room}</span>
-        <button onclick="leaveSharedRoom('${room.replace(/'/g, "\\'")}')" class="text-[11px] font-bold text-red-500 px-2 py-0.5 rounded-lg hover:bg-red-50 shrink-0">
+        <button onclick="leaveSharedRoom('${room.replace(/'/g, "\'")}')" class="text-[11px] font-bold text-red-500 px-2 py-0.5 rounded-lg hover:bg-red-50 shrink-0">
           나가기
         </button>
       </div>
@@ -1290,19 +1366,18 @@
 
     personalVaultCode = val;
     saveSyncMeta();
-    lastPersonalCloudTs = 0;
 
-    // 서버에 이미 저장된 내 개인 노트가 있으면 가져오고, 없으면 현재 로컬 노트를 업로드
-    const cloudVault = await fetchPersonalVaultFromCloud(personalVaultCode);
-    if (cloudVault && Array.isArray(cloudVault.privateNotes)) {
-      applyIncomingPersonalVault(cloudVault);
-      // 새로 추가한 공유방들도 서버에서 불러오기
-      for (const r of joinedSharedRooms) {
-        const rData = await fetchSingleRoomFromCloud(r);
-        if (rData) applyIncomingRoomData(r, rData);
-      }
-    } else {
-      await pushPersonalVaultToCloud(Date.now());
+    // 1단계: 서버에 이미 있던 노트를 먼저 안전하게 가져와 로컬과 병합 (덮어쓰기 차단)
+    const cloudList = await fetchSafePersonalVault(personalVaultCode);
+    if (cloudList) {
+      mergeIncomingVaultNotes(cloudList);
+    }
+
+    // 2단계: 로컬에만 있던 내 비공개 노트들을 개별 ID PATCH로 안전하게 업로드
+    isInitialCloudHydrated = true;
+    const localPrivate = notes.filter(n => getNoteSharedRooms(n).length === 0);
+    if (localPrivate.length > 0) {
+      saveStateToDB(localPrivate);
     }
 
     rebuildAllCloudListeners();
@@ -1333,14 +1408,11 @@
     }
     input.value = '';
 
-    const rData = await fetchSingleRoomFromCloud(roomName);
-    if (rData && Array.isArray(rData.roomNotes)) {
-      applyIncomingRoomData(roomName, rData);
+    const rList = await fetchSafeRoom(roomName);
+    if (rList) {
+      mergeIncomingRoomNotes(roomName, rList);
     }
 
-    if (personalVaultCode) {
-      await pushPersonalVaultToCloud(Date.now());
-    }
     rebuildAllCloudListeners();
     renderJoinedRoomsList();
     renderHome();
@@ -1350,7 +1422,6 @@
     joinedSharedRooms = joinedSharedRooms.filter(r => r !== roomName);
     saveSyncMeta();
 
-    // 해당 방에서만 공유되던 외부 노트 정리
     const nextNotes = [];
     notes.forEach(n => {
       const rooms = getNoteSharedRooms(n);
@@ -1364,12 +1435,83 @@
       }
     });
     notes = nextNotes;
+    repairOrphanNotes();
     saveLocalVault();
-    if (personalVaultCode) pushPersonalVaultToCloud(Date.now());
 
     rebuildAllCloudListeners();
     renderJoinedRoomsList();
     renderHome();
+  }
+
+  // ================= JSON 전체 백업 내보내기 & 불러오기 =================
+  function exportAllNotesBackupJSON() {
+    const backupData = {
+      version: 'postit_backup_v1',
+      exportedAt: new Date().toISOString(),
+      notes,
+      trashedNotes,
+      joinedSharedRooms,
+      baseBgColors,
+      baseBlockColors,
+      cpRecentColors
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateTag = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `postit_notes_backup_${dateTag}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function triggerRestoreBackupJSON() {
+    const inp = document.getElementById('backup-restore-input');
+    inp.value = '';
+    inp.click();
+  }
+
+  function handleRestoreBackupJSON(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed || !Array.isArray(parsed.notes)) {
+          alert('올바른 포스트잇 백업 파일(.json)이 아닙니다.');
+          return;
+        }
+        // 기존 노트를 지우지 않고 백업 파일의 노트들을 ID 기준으로 안전 병합
+        let restoredCount = 0;
+        parsed.notes.forEach(bNote => {
+          if (!bNote || !bNote.id) return;
+          const idx = notes.findIndex(n => n.id === bNote.id);
+          if (idx === -1) {
+            notes.push(bNote);
+            restoredCount++;
+          } else if ((bNote.updatedAt || 0) >= (notes[idx].updatedAt || 0)) {
+            notes[idx] = bNote;
+            restoredCount++;
+          }
+        });
+        if (Array.isArray(parsed.joinedSharedRooms)) {
+          parsed.joinedSharedRooms.forEach(r => {
+            if (!joinedSharedRooms.includes(r)) joinedSharedRooms.push(r);
+          });
+          saveSyncMeta();
+        }
+        repairOrphanNotes();
+        saveStateToDB(notes, joinedSharedRooms);
+        rebuildAllCloudListeners();
+        closeSyncHubModal();
+        renderHome();
+        alert(`백업 파일에서 총 ${restoredCount}개의 노트를 안전하게 복원했습니다.`);
+      } catch (_) {
+        alert('백업 파일을 읽는 중 오류가 발생했습니다.');
+      }
+    };
+    reader.readAsText(file);
   }
 
   // ================= 개별 노트·파일 다중 공유방 선택기 =================
@@ -1417,7 +1559,6 @@
     if (!target) return;
     const activeRooms = getNoteSharedRooms(target);
 
-    // 현재 노트에는 체크되어 있는데 joinedSharedRooms에 누락된 방이 있다면 합쳐서 표시
     const allAvailableRooms = Array.from(new Set([...joinedSharedRooms, ...activeRooms]));
     const listEl = document.getElementById('note-share-rooms-checklist');
 
@@ -1429,7 +1570,7 @@
     listEl.innerHTML = allAvailableRooms.map(room => {
       const checked = activeRooms.includes(room);
       return `
-        <div onclick="toggleRoomForTargetNote('${room.replace(/'/g, "\\'")}')"
+        <div onclick="toggleRoomForTargetNote('${room.replace(/'/g, "\'")}')"
           class="p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition ${
             checked ? 'border-emerald-400 bg-emerald-50 text-emerald-950' : 'border-gray-200 bg-gray-50 text-gray-800'
           }">
@@ -1450,10 +1591,8 @@
     if (!joinedSharedRooms.includes(roomName)) {
       joinedSharedRooms.push(roomName);
       saveSyncMeta();
-      const rData = await fetchSingleRoomFromCloud(roomName);
-      if (rData && Array.isArray(rData.roomNotes)) {
-        applyIncomingRoomData(roomName, rData);
-      }
+      const rList = await fetchSafeRoom(roomName);
+      if (rList) mergeIncomingRoomNotes(roomName, rList);
       rebuildAllCloudListeners();
     }
     input.value = '';
@@ -1469,6 +1608,7 @@
     const currentRooms = getNoteSharedRooms(target);
     const shouldEnable = forceEnable !== null ? forceEnable : !currentRooms.includes(roomName);
 
+    const affectedNotes = [target];
     const applyRoomChange = (noteObj) => {
       const prev = getNoteSharedRooms(noteObj);
       if (shouldEnable) {
@@ -1480,10 +1620,13 @@
 
     applyRoomChange(target);
     if (isFolder) {
-      children.forEach(c => applyRoomChange(c));
+      children.forEach(c => {
+        applyRoomChange(c);
+        affectedNotes.push(c);
+      });
     }
 
-    saveStateToDB(false, [roomName]);
+    saveStateToDB(affectedNotes, [roomName]);
     renderNoteShareChecklist();
 
     if (!document.getElementById('editor-view').classList.contains('hidden')) {
@@ -1500,16 +1643,18 @@
     const children = notes.filter(n => n.parentId === target.id);
     const isFolder = children.length > 0 && (activeFolderId === target.id || !activeFolderId);
     const affectedRooms = new Set(getNoteSharedRooms(target));
+    const affectedNotes = [target];
 
     target.sharedRooms = [];
     if (isFolder) {
       children.forEach(c => {
         getNoteSharedRooms(c).forEach(r => affectedRooms.add(r));
         c.sharedRooms = [];
+        affectedNotes.push(c);
       });
     }
 
-    saveStateToDB(false, Array.from(affectedRooms));
+    saveStateToDB(affectedNotes, Array.from(affectedRooms));
     closeNoteShareSelector();
     if (!document.getElementById('editor-view').classList.contains('hidden')) {
       renderEditor();
@@ -1813,7 +1958,7 @@
       photos: [],
       subChecks: []
     });
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
 
     requestAnimationFrame(() => {
@@ -1904,7 +2049,7 @@
       }
 
       editingSinglePhotoId = newId;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     } finally {
       isProcessingSingleUpload = false;
@@ -1958,7 +2103,7 @@
     if (singlePhotoResizeState.active) {
       singlePhotoResizeState.active = false;
       const note = notes.find(n => n.id === currentNoteId);
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
     }
   });
   document.addEventListener('pointercancel', () => {
@@ -2184,7 +2329,7 @@
       setAllBlocksCardBg(finalHex);
       renderDrawerControls();
     }
-    saveStateToDB(false, []);
+    saveLocalVault();
     closeCustomColorModal();
   }
 
@@ -2232,6 +2377,7 @@
 
   // ================= 홈 화면 렌더링 =================
   function renderHome() {
+    repairOrphanNotes();
     updateSyncStatusIndicator(isCloudConnected);
 
     const grid = document.getElementById('home-grid');
@@ -2270,7 +2416,7 @@
       folderShareBtn.classList.add('hidden');
       titleArea.classList.remove('hidden');
       folderTitleInput.classList.add('hidden');
-      visibleNotes = notes.filter(n => n.parentId === null);
+      visibleNotes = notes.filter(n => !n.parentId);
     }
 
     grid.innerHTML = visibleNotes.map(note => {
@@ -2409,7 +2555,7 @@
     const parent = notes.find(n => n.id === activeFolderId);
     if (parent) {
       parent.folderName = val;
-      saveStateToDB(false, getNoteSharedRooms(parent));
+      saveStateToDB(parent);
     }
   }
 
@@ -2508,7 +2654,6 @@
         const targetNote = notes.find(n => n.id === homeDragInfo.mergeTargetId);
         if (draggedNote && targetNote) {
           draggedNote.parentId = targetNote.id;
-          // 대상 폴더가 공유 방을 가지고 있다면 새로 합쳐진 노트도 그 방에 자동 포함
           const targetRooms = getNoteSharedRooms(targetNote);
           if (targetRooms.length > 0) {
             draggedNote.sharedRooms = Array.from(new Set([...getNoteSharedRooms(draggedNote), ...targetRooms]));
@@ -2517,7 +2662,7 @@
             targetNote.folderName = targetNote.title || '새 묶음';
           }
           recentTabIds = recentTabIds.filter(id => id !== draggedNote.id);
-          saveStateToDB(false, targetRooms);
+          saveStateToDB([draggedNote, targetNote], targetRooms);
           renderHome();
         }
       } else {
@@ -2539,12 +2684,13 @@
             }
             activeFolderId = newRoot.id;
             notes = [...reorderedGroup, ...otherNotes];
+            saveStateToDB(reorderedGroup);
           } else {
             const childNotes = notes.filter(n => n.parentId !== null);
             const reorderedRoots = orderedIds.map(id => notes.find(n => n.id === id)).filter(Boolean);
             notes = [...reorderedRoots, ...childNotes];
+            saveLocalVault();
           }
-          saveStateToDB(false, []);
           renderHome();
         }
       }
@@ -2655,7 +2801,7 @@
 
       if (chipDragInfo.kind === 'tab' && orderedIds.length > 0) {
         recentTabIds = orderedIds;
-        saveStateToDB(false, []);
+        saveLocalVault();
         renderEditor();
       } else if (chipDragInfo.kind === 'linked' && orderedIds.length > 0) {
         const groupSet = new Set(orderedIds);
@@ -2672,7 +2818,7 @@
           reorderedGroup[i].parentId = newRoot.id;
         }
         notes = [...reorderedGroup, ...otherNotes];
-        saveStateToDB(false, getNoteSharedRooms(newRoot));
+        saveStateToDB(reorderedGroup);
         renderEditor();
       }
     }
@@ -2734,19 +2880,21 @@
       restored.parentId = null;
     }
     notes.push(restored);
-    saveStateToDB(false, []);
+    saveStateToDB(restored);
     renderTrashList();
   }
 
   function permanentlyDeleteNote(noteId) {
     trashedNotes = trashedNotes.filter(n => n.id !== noteId);
-    saveStateToDB(false, []);
+    deletedNoteIdsForCloud.add(noteId);
+    saveStateToDB();
     renderTrashList();
   }
 
   function emptyAllTrash() {
+    trashedNotes.forEach(t => deletedNoteIdsForCloud.add(t.id));
     trashedNotes = [];
-    saveStateToDB(false, []);
+    saveStateToDB();
     renderTrashList();
   }
 
@@ -2789,6 +2937,7 @@
       title: `${origin.title || '노트'} (복사본)`,
       parentId: origin.parentId,
       sharedRooms: [],
+      updatedAt: Date.now(),
       bgColor: origin.bgColor,
       paper: origin.paper,
       blocks: origin.blocks.map((b, i) => ({
@@ -2799,7 +2948,7 @@
       }))
     };
     notes.push(copyNote);
-    saveStateToDB(false, []);
+    saveStateToDB(copyNote);
     closeCardPopover();
     renderHome();
   }
@@ -2811,12 +2960,13 @@
     toTrash.forEach(n => {
       getNoteSharedRooms(n).forEach(r => affectedRooms.add(r));
       n.sharedRooms = [];
+      deletedNoteIdsForCloud.add(n.id);
     });
     trashedNotes.unshift(...toTrash);
     notes = notes.filter(n => n.id !== actionTargetNoteId && n.parentId !== actionTargetNoteId);
     recentTabIds = recentTabIds.filter(id => id !== actionTargetNoteId);
     if (activeFolderId === actionTargetNoteId) activeFolderId = null;
-    saveStateToDB(false, Array.from(affectedRooms));
+    saveStateToDB(null, Array.from(affectedRooms));
     closeCardPopover();
     renderHome();
   }
@@ -2945,7 +3095,7 @@
         goHome();
       }
     } else {
-      saveStateToDB(false, []);
+      saveLocalVault();
       renderEditor();
     }
   }
@@ -2970,7 +3120,7 @@
       b.done = nextState;
       if (b.type === 'split-slim') b.done2 = nextState;
     });
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
   }
 
@@ -3001,7 +3151,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
     note.bgColor = hex;
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderDrawerControls();
     renderEditor();
   }
@@ -3010,7 +3160,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (!note) return;
     note.paper = paperId;
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderDrawerControls();
     renderEditor();
   }
@@ -3021,7 +3171,7 @@
     note.blocks.forEach(b => {
       if (b.type !== 'single-photo') b.cardBg = bgVal;
     });
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderDrawerControls();
     renderEditor();
   }
@@ -3039,7 +3189,7 @@
         b.done2 = false;
       }
     });
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderDrawerControls();
     renderEditor();
   }
@@ -3247,7 +3397,7 @@
         e.preventDefault();
         block.isPlainMemo = true;
         block.done = false;
-        saveStateToDB(false, getNoteSharedRooms(note));
+        saveStateToDB(note);
         renderEditor();
         requestAnimationFrame(() => {
           const inp = document.querySelector(`[data-block-id="${blockId}"] [data-role="main-title"]`);
@@ -3280,7 +3430,7 @@
       block.subChecks.push(newItem);
     }
 
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
     requestAnimationFrame(() => {
       const inp = document.querySelector(`[data-sub-id="${newSubId}"] textarea`);
@@ -3312,7 +3462,7 @@
       if (!targetSub.isPlainMemo) {
         targetSub.isPlainMemo = true;
         targetSub.done = false;
-        saveStateToDB(false, getNoteSharedRooms(note));
+        saveStateToDB(note);
         renderEditor();
         requestAnimationFrame(() => {
           const sameInp = document.querySelector(`[data-sub-id="${subId}"] textarea`);
@@ -3327,7 +3477,7 @@
       if (el.value === '') {
         const prevSubId = idx > 0 ? block.subChecks[idx - 1].id : null;
         block.subChecks.splice(idx, 1);
-        saveStateToDB(false, getNoteSharedRooms(note));
+        saveStateToDB(note);
         renderEditor();
 
         requestAnimationFrame(() => {
@@ -3354,7 +3504,7 @@
     const sub = block?.subChecks?.find(s => s.id === subId);
     if (sub) {
       sub.done = !sub.done;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     }
   }
@@ -3365,7 +3515,7 @@
     const sub = block?.subChecks?.find(s => s.id === subId);
     if (sub) {
       sub.text = val;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
     }
   }
 
@@ -3374,7 +3524,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block && Array.isArray(block.subChecks)) {
       block.subChecks = block.subChecks.filter(s => s.id !== subId);
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     }
   }
@@ -3756,7 +3906,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block.done2 = !block.done2;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     }
   }
@@ -3869,7 +4019,7 @@
           completedSortMode = 'stay';
         }
         note.blocks = reordered;
-        saveStateToDB(false, getNoteSharedRooms(note));
+        saveStateToDB(note);
         renderEditor();
       }
     }
@@ -3893,7 +4043,7 @@
     const [removed] = note.blocks.splice(idx, 1);
     if (editingSinglePhotoId === blockId) editingSinglePhotoId = null;
     lastDeletedBlockInfo = { noteId: note.id, index: idx, block: removed };
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
 
     const toast = document.getElementById('undo-toast');
@@ -3910,7 +4060,7 @@
     const note = notes.find(n => n.id === lastDeletedBlockInfo.noteId);
     if (note) {
       note.blocks.splice(lastDeletedBlockInfo.index, 0, lastDeletedBlockInfo.block);
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     }
     lastDeletedBlockInfo = null;
@@ -3921,7 +4071,7 @@
     const note = notes.find(n => n.id === currentNoteId);
     if (note) {
       note.title = val;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
     }
   }
 
@@ -3930,7 +4080,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block.done = !block.done;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
       renderEditor();
     }
   }
@@ -3940,7 +4090,7 @@
     const block = note?.blocks.find(b => b.id === blockId);
     if (block) {
       block[field] = val;
-      saveStateToDB(false, getNoteSharedRooms(note));
+      saveStateToDB(note);
     }
   }
 
@@ -4048,11 +4198,12 @@
     const parentFolder = activeFolderId ? notes.find(n => n.id === activeFolderId) : null;
     const inheritedRooms = parentFolder ? [...getNoteSharedRooms(parentFolder)] : [];
 
-    notes.push({
+    const newNote = {
       id: newId,
       title: '',
       parentId: activeFolderId || null,
       sharedRooms: inheritedRooms,
+      updatedAt: Date.now(),
       bgColor: draftColor,
       paper: draftPaper,
       blocks: [
@@ -4070,8 +4221,9 @@
           subChecks: []
         }
       ]
-    });
-    saveStateToDB(false, inheritedRooms);
+    };
+    notes.push(newNote);
+    saveStateToDB(newNote, inheritedRooms);
     closeCreateSheet();
     openNote(newId, true);
   }
@@ -4133,7 +4285,7 @@
       photos: [],
       subChecks: []
     });
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     closeAddBlockModal();
     renderEditor();
   }
@@ -4188,7 +4340,7 @@
       }
       recentTabIds = recentTabIds.filter(id => id !== target.id);
     }
-    saveStateToDB(false, rootRooms);
+    saveStateToDB(target, rootRooms);
     renderLinkModalList();
     if (!document.getElementById('editor-view').classList.contains('hidden')) {
       renderEditor();
@@ -4252,7 +4404,7 @@
       const persistedDataUrl = await compressAndPersistImage(file);
       block.photos.push(persistedDataUrl);
     }
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
     e.target.value = '';
   }
@@ -4304,7 +4456,7 @@
     if (!block || !block.photos.length) return;
     block.photos.splice(lightboxIndex, 1);
     lightboxZoom = 1;
-    saveStateToDB(false, getNoteSharedRooms(note));
+    saveStateToDB(note);
     renderEditor();
     if (block.photos.length === 0) {
       closeLightbox();
@@ -4336,13 +4488,13 @@
     document.getElementById('lightbox-modal').classList.add('hidden');
   }
 
-  // 앱 실행 시 로컬 보관함 복원 후 개인 동기화 코드 및 참여한 다중 공유방 병합
+  // 앱 실행 시 로컬 보관함 복원 후 서버 데이터를 먼저 안전 병합한 뒤에야 쓰기 잠금 해제
   (async function bootstrapApp() {
     loadSyncMeta();
     await openAppDB();
 
     const saved = await loadLocalVault();
-    if (saved && Array.isArray(saved.notes)) {
+    if (saved && Array.isArray(saved.notes) && saved.notes.length > 0) {
       notes = saved.notes;
       trashedNotes = saved.trashedNotes || [];
       recentTabIds = saved.recentTabIds || [];
@@ -4353,6 +4505,7 @@
         joinedSharedRooms = saved.joinedSharedRooms;
         saveSyncMeta();
       }
+      repairOrphanNotes();
     } else {
       notes = getInitialGuideNotes();
       trashedNotes = [];
@@ -4360,20 +4513,21 @@
       saveLocalVault();
     }
 
+    renderHome();
+
     if (getCleanFirebaseUrl()) {
       if (personalVaultCode) {
-        const cloudVault = await fetchPersonalVaultFromCloud(personalVaultCode);
-        if (cloudVault && Array.isArray(cloudVault.privateNotes)) {
-          applyIncomingPersonalVault(cloudVault);
-        }
+        const cloudVault = await fetchSafePersonalVault(personalVaultCode);
+        if (cloudVault) mergeIncomingVaultNotes(cloudVault);
       }
       for (const roomName of joinedSharedRooms) {
-        const rData = await fetchSingleRoomFromCloud(roomName);
-        if (rData && Array.isArray(rData.roomNotes)) {
-          applyIncomingRoomData(roomName, rData);
-        }
+        const rData = await fetchSafeRoom(roomName);
+        if (rData) mergeIncomingRoomNotes(roomName, rData);
       }
+      isInitialCloudHydrated = true;
       rebuildAllCloudListeners();
+    } else {
+      isInitialCloudHydrated = true;
     }
 
     renderHome();
